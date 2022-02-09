@@ -1,2 +1,2 @@
 # tradestation
-tradestation, easylanguage
+EasyLanguage Systems, Indicators, and Functions for TradeStation
