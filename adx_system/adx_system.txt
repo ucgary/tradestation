@@ -1,0 +1,207 @@
+
+{
+中文说明：
+此策略反映了交易时应当坚持的三个最基本的规则：顺势而为、截断亏损、让利润奔跑
+规则如下
+1、用18日的ADX和DMI。当ADX下降时，不要开始交易。
+2、当ADX开始上升时，当且仅当抛物线方向与DMI方向一致时，沿此方向入市；
+3、一旦进入交易，用抛物线止损指令作为退市依据。
+4、退市后，当价格线重新上穿抛物线，加之ADX仍在上升，并且DMI显示走势依然良好，则再次入市。这一次抛物线用作择时依据。
+这种方法简单合理，因为ADX变为上升走向表明趋势性运动的开始，DMI告诉你运动是向上还是向下，抛物线验证了走向，
+并提供了密集的加速止损指令，在捕获最大限度的利润的同时控制了风险。
+设置6种状态(posStatus)
+0、无仓位
+1、有多仓
+2、有空仓
+3、多仓被止损
+4、空仓被止损
+5、多仓再次入场
+6、空仓再次入场
+如果再次入场的仓位被止损，那么就到了0无持仓。
+
+English description.
+adx trading system
+long when oDMIPlus > oDMIMinus and sar
+short when oDMIPlus < oDMIMinus and sar
+......
+}
+inputs: 
+adxrFilter(false),   //如果设置为true,表示adx大于adxr
+trendFilter(false),   //如果设置为true，表示adx的值需要大于ADXTrend
+ADXTrend( 20 ),
+Length( 18 ),
+double AfStep( 0.02 ),double AfLimit( 0.2 ), 
+	up_Color( Green ) , up_Color2( darkGreen ) , 
+	ignore_color(DarkGray),
+	down_Color( red ),down_Color2( darkred ),
+	stop_color(yellow) ;
+variables:
+	weizhi(15),           //画线的水平位置
+	PreSarAbove(0),PreSarBelow(0),  //当前K线的sar值，如果变换了方向，就是最后一个值，再被止损后可以做一个择时信号
+	prePos(0),  //prePos  1, 之前是long的仓位， 2，之前是short的仓位
+	posStatus(0),    //0, no positoon, 1, long ,2 ,short
+	ReEnterFlag(false), //是否为二次入场
+	longStopPrice(0), shortStopPrice(0),  //对于二次入场的仓位，不能按照sar来止损，要按照信号K线的high/low来止损
+	adxValue( 0 ), 
+	oDMIPlus( 0 ), 
+	oDMIMinus( 0 ), 
+	oDMI( 0 ), 
+	oADX( 0 ), 
+	oADXR( 0 ), 
+	oVolty( 0 ),
+	//sar
+	int sarValue( 0 ),
+	double oParCl( 0 ),
+	double oParOp( 0 ),
+	double oPosition( 0 ),
+	double oTransition( 0 );
+
+
+adxValue = DirMovement( H, L, C, Length, oDMIPlus, oDMIMinus, oDMI, oADX, oADXR, oVolty ) ;
+sarValue = ParabolicSAR( AfStep, AfLimit, oParCl, oParOp, oPosition, oTransition );
+If barnumber > 30 then begin
+	If  posStatus = 0 then begin
+		If oADX > oADX[1] then begin
+			If oDMIPlus > oDMIMinus and oPosition = 1 
+			And  ( trendFilter = false or  trendFilter = true and ( oADX> ADXTrend )) 
+			And (adxrFilter = false or adxrFilter=true and oADX > oADXR)
+			then begin
+					//PlotPaintBar( High, Low, Open, Close, !( "trend" ), up_Color );
+					plot1(weizhi,"trend",up_Color);
+					alert("long");
+					posStatus = 1;
+			end
+			Else If oDMIPlus < oDMIMinus and oPosition <> 1 
+			And  ( trendFilter = false or  trendFilter = true and (oADX> ADXTrend) ) 
+			And (adxrFilter = false or adxrFilter=true and oADX > oADXR)
+			then begin
+					//PlotPaintBar( High, Low, Open, Close, !( "trend" ), down_Color );
+					plot1(weizhi,"trend",down_Color);
+					alert("short");
+					posStatus = 2;
+			end
+			else begin
+				//PlotPaintBar( High, Low, Open, Close, !( "trend" ), ignore_color );	
+				plot1(weizhi,"trend",ignore_color);
+			end;
+		end
+		else  begin
+			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), ignore_color );	
+			plot1(weizhi,"trend",ignore_color);
+		end;
+	end;
+	
+	If posStatus = 1 then begin
+		if oPosition <> 1  then begin  //一旦进入交易，用抛物线止损指令作为退市依据。
+ 			posStatus = 3;
+ 			PreSarAbove =oParCl[1];
+ 			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), stop_Color );
+ 			plot1(weizhi,"trend",stop_Color);
+ 			alert("stop long");
+ 		end
+ 		Else if not(posStatus[1] = 0) then begin
+ 			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), up_Color );
+ 			plot1(weizhi,"trend",up_Color);
+ 		end;
+	end;
+	
+ 	
+ 	If posStatus = 2 then begin
+ 		if oPosition = 1  then begin
+ 			posStatus = 4;
+ 			PreSarBelow =oParCl[1];
+ 			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), stop_Color );
+ 			plot1(weizhi,"trend",stop_Color);
+ 			alert("stop short");
+ 		end
+ 		Else if not(posStatus[1] = 0) then begin
+ 			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), down_Color );
+ 			plot1(weizhi,"trend",down_Color);
+ 		end;
+ 	end;
+ 	
+ 	
+ 	If posStatus = 3 then begin
+ 		If oADX > oADX[1] and oDMIPlus > oDMIMinus  and close > PreSarAbove 
+ 		then begin
+			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), up_Color2 );
+			plot1(weizhi,"trend",up_Color2);
+			alert("long again");
+			posStatus = 5;
+			longStopPrice = Low;
+		end
+		Else if  oADX > oADX[1] and oDMIPlus < oDMIMinus and oPosition <> 1 
+		And  ( trendFilter = false or  trendFilter = true and (oADX> ADXTrend) ) 
+		And (adxrFilter = false or adxrFilter=true and oADX > oADXR)
+		then begin
+			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), down_Color );
+			plot1(weizhi,"trend",down_Color);
+			alert("short");
+			posStatus = 2;
+		end
+		Else if not(posStatus[1] = 1) then begin
+			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), ignore_color );
+			plot1(weizhi,"trend",ignore_color);	
+		end;
+	end;
+	
+	If posStatus = 4 then begin
+		If  oADX > oADX[1] and oDMIPlus < oDMIMinus  and close < PreSarBelow  
+		then begin
+			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), down_Color2 );
+			plot1(weizhi,"trend",down_Color2);	
+			posStatus = 6;
+			alert("short again");
+			shortStopPrice = High;
+		end
+		Else if  oADX > oADX[1] and oDMIPlus > oDMIMinus and oPosition = 1 
+		And  ( trendFilter = false or  trendFilter = true and  (oADX> ADXTrend) ) 
+		And (adxrFilter = false or adxrFilter=true and oADX > oADXR)
+		then begin
+			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), up_Color );
+			plot1(weizhi,"trend",up_Color);
+			alert("long");
+			posStatus = 1;
+		end
+		Else  if not(posStatus[1] = 2) then begin
+			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), ignore_color );
+			plot1(weizhi,"trend",ignore_color);	
+		end;
+	end;
+ 	
+ 	
+ 	If posStatus = 5 then begin
+ 		If  oPosition = 1   then begin
+ 			longStopPrice = oParCl;
+ 		end;
+ 		If low > longStopPrice  then begin
+ 			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), up_Color2 );
+ 			plot1(weizhi,"trend",up_Color2);
+ 			
+ 		end
+ 		Else if not(posStatus[1] = 3) then begin
+ 			posStatus = 0;
+ 			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), stop_Color );
+ 			plot1(weizhi,"trend",stop_Color);	
+ 			alert("stop long");
+ 		end;
+ 	end;
+ 	
+ 	
+ 	If posStatus = 6 then begin
+ 		If  oPosition <> 1  then begin
+ 			shortStopPrice = oParCl;
+ 		end;
+ 		If  high < shortStopPrice  then begin
+ 			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), down_Color2 );
+ 			plot1(weizhi,"trend",down_Color2);	
+ 		end
+ 		Else if not(posStatus[1] = 4) then begin
+ 			posStatus = 0;
+ 			//PlotPaintBar( High, Low, Open, Close, !( "trend" ), stop_Color );
+ 			plot1(weizhi,"trend",stop_Color);	
+ 			alert("stop short");
+ 		end;
+ 	end;
+ 	
+end;
