@@ -1,0 +1,85 @@
+
+input:
+showtype(1),  // 1, show big, 2, show faamg/spx
+FundField( "QTCO" );
+
+
+
+VAR:
+CAPBig(0),
+FB_shares(0),
+AMZN_shares(0),
+AAPL_shares(0),
+MSFT_shares(0),
+GOOGL_shares(0),
+
+//close price
+FB_close(0),
+AMZN_close(0),
+AAPL_close(0),
+MSFT_close(0),
+GOOGL_close(0);
+
+
+FB_shares=2850.00;
+AMZN_shares=501.00;
+AAPL_shares=17135.76;
+MSFT_shares=7571.00;
+GOOGL_shares=681.22;
+
+
+FB_close=close data38;
+AMZN_close=close data39;
+AAPL_close=close data40;
+MSFT_close=close data41;
+GOOGL_close=close data42;
+
+	
+CAPBig = 	FB_close * FB_shares + AMZN_close * AMZN_shares + AAPL_close * AAPL_shares + MSFT_close * MSFT_shares + GOOGL_close * GOOGL_shares ;
+	
+{
+RHI_shares(0)	114.64
+LEG_shares(0)	132.39
+PVH_shares(0)	71.09
+SEE_shares(0)	155.68
+ALB_shares(0)	106.34
+IVZ_shares(0)	459.20
+XRX_shares(0)	213.01
+PBCT_shares(0)	424.60
+FLS_shares(0)	129.92
+HOG_shares(0)	153.06
+PWR_shares(0)	137.71
+UNM_shares(0)	203.48
+DVA_shares(0)	121.98
+HBI_shares(0)	348.09
+ROL_shares(0)	327.76
+NWSA_shares(0)	588.55
+RL_shares(0)	73.10
+HRB_shares(0)	192.90
+FOX_shares(0)	604.69
+IPGP_shares(0)	53.18
+CPRI_shares(0)	150.34
+M_shares(0)	310.24
+XEC_shares(0)	102.15
+DISCA_shares(0)	507.00
+HP_shares(0)	107.47
+ADS_shares(0)	47.70
+AMG_shares(0)	58.50
+TRIP_shares(0)	134.37
+LB_shares(0)	278.00
+JWN_shares(0)	157.10
+UAA_shares(0)	454.26
+UA_shares(0)	454.26
+COTY_shares(0)	765.10
+GPS_shares(0)	374.00
+MAC_shares(0)	149.60
+NWS_shares(0)	588.55
+
+}
+If showtype = 1 then begin
+	plot1(CAPBig, "cap big");
+end;
+
+If showtype =2 then begin
+	plot2(CAPBIG/close data1, "cap ratio");
+end;
