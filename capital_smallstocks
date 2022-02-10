@@ -1,0 +1,249 @@
+
+input:
+showtype(1),   //1, only small, 2, show small and big, 3, show big
+chengyi(15);
+//FundField( "QTCO" );
+
+
+
+VAR:
+CAPSmall(0),
+RHI_shares(0),
+LEG_shares(0),
+PVH_shares(0),
+SEE_shares(0),
+ALB_shares(0),
+IVZ_shares(0),
+XRX_shares(0),
+PBCT_shares(0),
+FLS_shares(0),
+HOG_shares(0),
+PWR_shares(0),
+UNM_shares(0),
+DVA_shares(0),
+HBI_shares(0),
+ROL_shares(0),
+NWSA_shares(0),
+RL_shares(0),
+HRB_shares(0),
+FOX_shares(0),
+IPGP_shares(0),
+CPRI_shares(0),
+M_shares(0),
+XEC_shares(0),
+DISCA_shares(0),
+HP_shares(0),
+ADS_shares(0),
+AMG_shares(0),
+TRIP_shares(0),
+LB_shares(0),
+JWN_shares(0),
+UAA_shares(0),
+UA_shares(0),
+COTY_shares(0),
+GPS_shares(0),
+MAC_shares(0),
+NWS_shares(0),
+//close price
+RHI_close(0),
+LEG_close(0),
+PVH_close(0),
+SEE_close(0),
+ALB_close(0),
+IVZ_close(0),
+XRX_close(0),
+PBCT_close(0),
+FLS_close(0),
+HOG_close(0),
+PWR_close(0),
+UNM_close(0),
+DVA_close(0),
+HBI_close(0),
+ROL_close(0),
+NWSA_close(0),
+RL_close(0),
+HRB_close(0),
+FOX_close(0),
+IPGP_close(0),
+CPRI_close(0),
+M_close(0),
+XEC_close(0),
+DISCA_close(0),
+HP_close(0),
+ADS_close(0),
+AMG_close(0),
+TRIP_close(0),
+LB_close(0),
+JWN_close(0),
+UAA_close(0),
+UA_close(0),
+COTY_close(0),
+GPS_close(0),
+MAC_close(0),
+NWS_close(0),
+//
+CAPBig(0),
+FB_shares(0),
+AMZN_shares(0),
+AAPL_shares(0),
+MSFT_shares(0),
+GOOGL_shares(0),
+
+//close price
+FB_close(0),
+AMZN_close(0),
+AAPL_close(0),
+MSFT_close(0),
+GOOGL_close(0);
+
+
+RHI_shares=114.64;
+LEG_shares=132.39;
+PVH_shares=71.09;
+SEE_shares=155.68;
+ALB_shares=106.34;
+IVZ_shares=459.20;
+XRX_shares=213.01;
+PBCT_shares=424.60;
+FLS_shares=129.92;
+HOG_shares=153.06;
+PWR_shares=137.71;
+UNM_shares=203.48;
+DVA_shares=121.98;
+HBI_shares=348.09;
+ROL_shares=327.76;
+NWSA_shares=588.55;
+RL_shares=73.10;
+HRB_shares=192.90;
+FOX_shares=604.69;
+IPGP_shares=53.18;
+CPRI_shares=150.34;
+M_shares=310.24;
+XEC_shares=102.15;
+DISCA_shares=507.00;
+HP_shares=107.47;
+ADS_shares=47.70;
+AMG_shares=58.50;
+TRIP_shares=134.37;
+LB_shares=278.00;
+JWN_shares=157.10;
+UAA_shares=454.26;
+UA_shares=454.26;
+COTY_shares=765.10;
+GPS_shares=374.00;
+MAC_shares=149.60;
+NWS_shares=588.55;
+
+RHI_close=close data2;
+LEG_close=close data3;
+PVH_close=close data4;
+SEE_close=close data5;
+ALB_close=close data6;
+IVZ_close=close data7;
+XRX_close=close data8;
+PBCT_close=close data9;
+FLS_close=close data10;
+HOG_close=close data11;
+PWR_close=close data12;
+UNM_close=close data13;
+DVA_close=close data14;
+HBI_close=close data15;
+ROL_close=close data16;
+NWSA_close=close data17;
+RL_close=close data18;
+HRB_close=close data19;
+FOX_close=close data20;
+IPGP_close=close data21;
+CPRI_close=close data22;
+M_close=close data23;
+XEC_close=close data24;
+DISCA_close=close data25;
+HP_close=close data26;
+ADS_close=close data27;
+AMG_close=close data28;
+TRIP_close=close data29;
+LB_close=close data30;
+JWN_close=close data31;
+UAA_close=close data32;
+UA_close=close data33;
+COTY_close=close data34;
+GPS_close=close data35;
+MAC_close=close data36;
+NWS_close=close data37;
+
+
+FB_shares=2850.00;
+AMZN_shares=501.00;
+AAPL_shares=17135.76;
+MSFT_shares=7571.00;
+GOOGL_shares=681.22;
+
+
+FB_close=close data38;
+AMZN_close=close data39;
+AAPL_close=close data40;
+MSFT_close=close data41;
+GOOGL_close=close data42;
+	
+CAPSmall = 	RHI_close * RHI_shares + LEG_close * LEG_shares + PVH_close * PVH_shares + SEE_close * SEE_shares + ALB_close * ALB_shares + IVZ_close * IVZ_shares + XRX_close * XRX_shares + PBCT_close * PBCT_shares 
++ FLS_close * FLS_shares + HOG_close * HOG_shares + PWR_close * PWR_shares + UNM_close * UNM_shares + DVA_close * DVA_shares + HBI_close * HBI_shares + ROL_close * ROL_shares + NWSA_close * NWSA_shares + RL_close * RL_shares 
++ HRB_close * HRB_shares + FOX_close * FOX_shares + IPGP_close * IPGP_shares + CPRI_close * CPRI_shares + M_close * M_shares + XEC_close * XEC_shares + DISCA_close * DISCA_shares + HP_close * HP_shares + ADS_close * ADS_shares 
++ AMG_close * AMG_shares + TRIP_close * TRIP_shares + LB_close * LB_shares + JWN_close * JWN_shares + UAA_close * UAA_shares + UA_close * UA_shares + COTY_close * COTY_shares + GPS_close * GPS_shares + MAC_close * MAC_shares 
++ NWS_close * NWS_shares;
+
+
+CAPBig = 	FB_close * FB_shares + AMZN_close * AMZN_shares + AAPL_close * AAPL_shares + MSFT_close * MSFT_shares + GOOGL_close * GOOGL_shares ;
+	
+{
+RHI_shares(0)	114.64
+LEG_shares(0)	132.39
+PVH_shares(0)	71.09
+SEE_shares(0)	155.68
+ALB_shares(0)	106.34
+IVZ_shares(0)	459.20
+XRX_shares(0)	213.01
+PBCT_shares(0)	424.60
+FLS_shares(0)	129.92
+HOG_shares(0)	153.06
+PWR_shares(0)	137.71
+UNM_shares(0)	203.48
+DVA_shares(0)	121.98
+HBI_shares(0)	348.09
+ROL_shares(0)	327.76
+NWSA_shares(0)	588.55
+RL_shares(0)	73.10
+HRB_shares(0)	192.90
+FOX_shares(0)	604.69
+IPGP_shares(0)	53.18
+CPRI_shares(0)	150.34
+M_shares(0)	310.24
+XEC_shares(0)	102.15
+DISCA_shares(0)	507.00
+HP_shares(0)	107.47
+ADS_shares(0)	47.70
+AMG_shares(0)	58.50
+TRIP_shares(0)	134.37
+LB_shares(0)	278.00
+JWN_shares(0)	157.10
+UAA_shares(0)	454.26
+UA_shares(0)	454.26
+COTY_shares(0)	765.10
+GPS_shares(0)	374.00
+MAC_shares(0)	149.60
+NWS_shares(0)	588.55
+
+}
+If showtype =1 then begin
+plot1(CAPSmall*chengyi, "cap small");
+end;
+If showtype =2 then begin
+plot1(CAPSmall*chengyi, "cap small");
+plot2(CAPBig, "cap big");
+end;
+If showtype =3 then begin
+plot2(CAPBig, "cap big");	
+end;
+
+If showtype =4 then begin
+plot3(CAPBig/CAPSmall, "cap ratio");	
+end;
