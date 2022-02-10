@@ -1,10 +1,3 @@
-{ Search Tag: WA-Breadth - Custom }
-
-{ 
-This indicator plots the number of symbols, from a user-specified list, that are
-trading above their moving average.  The moving average length is a user input.
-}
-
 { the code will make use of classes in these namespaces }
 using tsdata.common ;
 using tsdata.marketdata ;
@@ -168,7 +161,3 @@ if PSPsReady then { ensure enough PSP bars are available for calculations }
 	Plot2( 0, !( "ZeroLine" ) ) ;
 	end ;
 
-
-{ ** Copyright © TradeStation Technologies, Inc.  All Rights Reserved ** 
-  ** TradeStation reserves the right to modify or overwrite this analysis technique 
-     with each release. ** }
