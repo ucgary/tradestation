@@ -1,0 +1,174 @@
+
+
+{ the code will make use of classes in these namespaces }
+using tsdata.common ;
+using tsdata.marketdata ;
+using elsystem ;
+using elsystem.collections ;
+
+inputs:
+	string SymbolList( "MSFT,AAPL,AMZN,FB,GOOG,GOOGL,INTC,CSCO,CMCSA,PEP,ADBE,NFLX,PYPL,AMGN,COST,TXN,SBUX,AVGO,NVDA,QCOM,CHTR,BKNG,GILD,MDLZ,ADP,FISV,INTU,CELG,TMUS,ISRG,CSX,MU,VRTX,WBA,BIIB,AMAT,MAR,ILMN,ADI,TSLA,ROST,ATVI,CTSH,EBAY,AMD,NXPI,XEL,ADSK,REGN,MNST")
+	 [DisplayName = "SymbolList", Tooltip = "Enter a list of symbols, separated by commas."],
+	int MALength( 30 ) [DisplayName = "MALength", Tooltip = 
+	 "Moving Average Length.  Enter the number of bars over which to calculate each symbol's moving average."] ;
+	
+variables:
+	intrabarpersist bool PSPsReady( false ),
+	int NumAbove( 0 ),
+	TokenList ListOfSymbols( NULL ),
+	Vector VectOfPSPs( NULL ),
+	PriceSeriesProvider PSP( NULL ) ;
+	
+{ initialization method }
+method void Init( Object sender, InitializedEventArgs args )  
+variables:  int PSPCount, int Counter ;
+	begin
+	{ this indicator does not work with tick/volume bars or advanced bars }
+	if BarType = 0 or ( BarType > 4 and BarType <> 14 ) then
+		throw Exception.Create( Name + !( " cannot be used with tick bars, " +
+		 "volume bars, or advanced bars." ) ) ;
+		 
+	VectOfPSPs = new Vector ;
+	ListOfSymbols = new TokenList ;
+	{ add the symbols specified in the input SymbolList to the TokenList }
+	ListOfSymbols.Add( SymbolList ) ; 
+
+	{ create a PriceSeriesProvider (PSP) for each symbol in the TokenList and place
+	  the PSP's into a Vector  }
+	for	Counter = 0 to ListOfSymbols.Count - 1
+		begin
+		PSP = new PriceSeriesProvider ;
+		PSP.Symbol = ListOfSymbols.Item[Counter] ;
+		If DATE <  1190420 AND PSP.Symbol = "DOW" THEN BEGIN
+			PSP.Symbol = "DWDP";
+		END;
+		
+		If DATE <  1180720 AND PSP.Symbol = "WBA" THEN BEGIN
+			PSP.Symbol = "GE";
+		END;
+		
+		
+		AlignPSP( PSP ) ;
+		PSP.Realtime = true ;
+		PSP.Load = true ;
+		PSPCount = PSP.Count ; { force the PSP to load }
+		VectOfPSPs.push_back( PSP ) ;
+		end ;
+	
+	end ;
+
+{ this method is used to align a PriceSeriesProvider to the data stream settings to
+  which the indicator is applied }
+method void AlignPSP( PriceSeriesProvider PSPToAlign )
+	begin
+	
+	{ currently, this indicator does not work when using Natural Hours for bar 
+	  building }
+	if AnalysisTechnique.DataStreams.DefaultStream.UsesNaturalHours then
+		throw Exception.Create( Name + !( " cannot be used with natural " +
+		 "hours selected." ) ) ;
+		 	
+	{ align the PSP bar interval and range; load additional data in case illiquid 
+	  symbols are used }
+	PSPToAlign.Interval = DataInterval.FromCurrentSymbolData( BarType, BarInterval ) ;
+	PSPToAlign.Range.FirstDate = DateTime.FromELDateAndTime( Date[MALength + 5], 
+	 Time[MALength + 5] ) - TimeSpan.Create( 4, 0, 0, 0 ) ;  
+	
+	{ align the PSP time zone, session, and natural hours }
+	PSPToAlign.TimeZone = ConvertTimeZone() ; { see commentary for the 
+	 ConvertTimeZone method }
+	PSPToAlign.SessionName = 
+	 AnalysisTechnique.DataStreams.DefaultStream.SessionName ;
+	
+	end ;
+
+{ 
+the data stream TimeZone and the TimeZone used in DataProviders are from 
+different classes; this method is used to provide the cross-reference between the
+two so that the DataProvider TimeZone can be set to the same TimeZone as the 
+data stream to which this indicator is applied 
+}
+method tsdata.common.TimeZone ConvertTimeZone()
+variables:  elsystem.TimeZone ChartTimeZone ;
+	begin
+	ChartTimeZone = AnalysisTechnique.DataStreams.DefaultStream.TimeZone ;
+	
+	switch ( ChartTimeZone )
+		begin
+		
+		case elsystem.TimeZone.Exchange:
+			return tsdata.common.TimeZone.Exchange ;
+		
+		case elsystem.TimeZone.Local:
+			return tsdata.common.TimeZone.Local ;
+			
+		end ;
+	
+	end ;
+
+method bool AllPSPsReadyToCalculate()
+variables:  int Counter, bool AllCountsOK ;
+	begin
+	
+	if VectOfPSPs.Count > 0 then { at least one PSP is in the Vector }
+		begin
+		AllCountsOK = true ;
+		
+		{ loop through all PSP's to ensure enough bars are loaded for the 
+		  calculations }
+		for Counter = 0 to VectOfPSPs.Count - 1
+			begin
+			
+			PSP = VectOfPSPs.Items[Counter] astype PriceSeriesProvider ;
+			
+			if PSP.Close.Count <= MALength then
+				begin
+	 			AllCountsOK = false ;
+				break ;
+				end ;
+				
+			end ;
+			
+		end
+	else { Vector does not contain any PSP's }
+		begin
+		AllCountsOK = false ;
+		end ;
+	
+	return AllCountsOK ;
+	
+	end ;
+
+{ 
+calculate a moving average of each symbol and compare the symbol's current price
+to the moving average;  count the number of symbols that are trading above their
+moving average
+}
+method int GetNumberAboveMA()
+variables:  int NumberAboveMA, int Counter ;
+	begin
+	NumberAboveMA = 0 ;
+	
+	for Counter = 0 to VectOfPSPs.Count - 1
+		begin
+		PSP = VectOfPSPs.Items[Counter] astype PriceSeriesProvider ;
+
+		if PSP.Close[0] > Average( PSP.Close, MALength ) then
+	 		NumberAboveMA += 1 ;
+		end ;
+	
+	return NumberAboveMA ;
+	end ;
+
+once ( AllPSPsReadyToCalculate() )
+	begin
+	PSPsReady = true ;
+	end ;
+	
+if PSPsReady then { ensure enough PSP bars are available for calculations }
+	begin
+	NumAbove = GetNumberAboveMA() ;
+	Plot1( NumAbove, !( "NumAbove" ) ) ;
+	Plot2( 0, !( "ZeroLine" ) ) ;
+	end ;
+
