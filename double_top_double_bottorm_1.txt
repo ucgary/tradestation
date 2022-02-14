@@ -1,0 +1,61 @@
+
+Input: Lookback(50),Strength(5);
+Var: LastHighPivotbar (0),LastLowPivotbar (0),PreviousHighPivotbar (0),PreviousLowPivotbar(0),
+LastHighPivot (0),LastLowPivot (0),PreviousHighPivot (0),PreviousLowPivot(0),DT (False),DB (False);
+
+LastHighPivotBar = PivotHighVSBar(1,H,Strength,Strength,Lookback);
+LastLowPivotBar = PivotLowVSbar(1,L,Strength,Strength,Lookback);
+PreviousHighPivotBar = PivotHighVSBar(2,H,Strength,Strength,Lookback);
+PreviousLowPivotBar = PivotLowVSbar(2,L,Strength,Strength,Lookback);
+LastHighPivot = PivotHighVS(1,H,Strength,Strength,Lookback);
+LastLowPivot = PivotLowVS(1,L,Strength,Strength,Lookback);
+PreviousHighPivot = PivotHighVS(2,H,Strength,Strength,Lookback);
+PreviousLowPivot = PivotLowVS(2,L,Strength,Strength,Lookback);
+
+/////////////////////////////DT/////////////////////
+
+If LastHighPivot <> - 1 and LastLowPivot <> -1 and PreviousHighPivot <>-1 and PreviousLowPivot <> -1
+
+	and PreviousHighPivot < PreviousLowPivotBar + Average((High - Low),10)
+	and PreviousHighPivot  > LastHighPivot  - Average((High - Low),10)
+	and LastHighPivot > LastLowPivot + 3* Average((High - Low),10)
+	and LastLowPivotbar > LastHighPivotbar 
+
+then begin
+
+	DT = TRUE;
+	end
+	else begin
+	DT = False;
+	
+end;
+
+If DT = True then begin
+
+	Plot1 [PreviousHighPivotBar ](PreviousHighPivot ,"DT1",Blue);
+	Plot2 [LastHighPivotBar ](LastHighPivot  ,"DT2",Blue);
+end;
+
+/////////////////////////////DB/////////////////////
+
+If LastHighPivot <> - 1 and LastLowPivot <> -1 and PreviousHighPivot <>-1 and PreviousLowPivot <> -1
+
+	and LastLowPivot < PreviousLowPivot + Average((High - Low),10)
+	and LastLowPivot > PreviousLowPivot - Average((High - Low),10)
+	and LastHighPivot > LastLowPivot + 3* Average((High - Low),10)
+	and LastHighPivotbar > LastLowPivotBar 
+
+then begin
+
+	DB  = TRUE;
+	end
+	else begin
+	DB  = False;
+	
+end;
+
+If DB = True then begin
+
+	Plot3 [PreviousLowPivotBar ](PreviousLowPivot ,"DB1",Yellow);
+	Plot4 [LastLowPivotBar ](LastLowPivot,"DB2",Yellow);
+end;
