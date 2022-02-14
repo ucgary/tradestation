@@ -1,0 +1,28 @@
+
+INPUT:
+baseValue(2500),
+sizeDinamic(true),
+volprofile(false),pivotprofile(false),timeprofile(true),
+lookup(400),
+sizeOfRow(2),
+showvolLimit(2),
+strength(2),sizeOfpivot(2),showptLimit(2),sizeOfTimeRow(2),showTimeLimit(2);
+
+VAR:
+SizeRow(0), SizePivot(0),SizeTime(0),
+barHL(0),equVol(0),volIndex(0),volRowMin(0), volRowMax(0),showvolumeList(0),
+LastLowPivotBar(0),LastHighPivotBar(0),LastHighPivot(0),LastLowPivot(0),pivotIndex(0),showpivotLimit(0),ptMin(0),ptMax(0),showtimeLinelimit(0),timeIndex(0),timeRowMin(0),timeRowMax(0)
+;
+
+Arrays: 
+	volumeInfo[6000]( 0 ), 
+	pivotInfo[6000]( 0 ), 
+	timeInfo[6000]( 0 ), 
+	volumeMaxList[3,2](0),
+	pivotMaxList[3,2](0),
+	timeMaxList[3,2](0);
+
+
+SizeRow = sizeOfRow	;
+SizePivot = sizeOfpivot ;
+SizeTime = sizeOfTimeRow ;
