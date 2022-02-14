@@ -1,0 +1,66 @@
+{ Search Tag: will-spread }
+
+{ will-spread ,增加show me功能，标识进入正值区域且创新高（比那根涨过正值区域的K线更高）并报警，进入负值区域且创新低（同理）。}
+
+inputs: 
+	DataSeries1( Close Data1 ) [DisplayName = "DataSeries1", ToolTip = 
+	 "Enter the first data series (for example, Close of Data1) used in the spread ratio calculation."],
+	DataSeries2( Close Data2 ) [DisplayName = "DataSeries2", ToolTip = 
+	 "Enter the second data series (for example, Close of Data2) used in the spread ratio calculation."],
+	HiAlert( 1 ) [DisplayName = "HiAlert", ToolTip = 
+	 "Enter the spread ratio value at or above which an alert will be triggered."],
+	LoAlert( 0 ) [DisplayName = "LoAlert", ToolTip = 
+	 "Enter the spread ratio value at or below which an alert will be triggered."],
+	 double FastLength( 5 ) [DisplayName = "FastLength", ToolTip = 
+	 "Enter number of bars to use in calculation of shorter length moving average."],
+	double SlowLength( 20 ) [DisplayName = "SlowLength", ToolTip = 
+	 "Enter number of bars to use in calculation of longer length moving average."],
+	 int BelowZeroColor( Red ) [DisplayName = "BelowZeroColor", ToolTip = 
+	 "Enter color for the difference plot when the plot value is less than zero."],
+	int AboveZeroColor( green ) [DisplayName = "AboveZeroColor", ToolTip = 
+	 "Enter color for the difference plot when the plot value is greater than zero."] ;
+
+variables:
+	SprdRatio( 0 ) ,double diff(0.0),bool init_buy(false),bool init_sell(false),double high_zero(0.0),double low_zero(0.0);
+	
+if DataSeries2 <> 0 then
+	SprdRatio = DataSeries1 / DataSeries2 *100 ;
+
+diff =  XAverage(SprdRatio,FastLength) -  XAverage(SprdRatio,SlowLength)  ;
+
+Plot1( diff, !( "will-Spread" ) ) ;
+if Diff < 0 then
+	begin
+		SetPlotColor( 1, BelowZeroColor );
+		
+	end
+	else if Diff > 0 then
+	begin
+		SetPlotColor( 1, AboveZeroColor );
+		
+	end;	
+	
+Plot2( UpperStr( Symbol of data2 ), !( "RefSym" ) );
+Plot3( 0, !( "ZeroLine" ) );
+
+if diff cross over 0 then begin
+	high_zero = high;
+	low_zero = 0;	
+	init_buy = false;
+end
+Else if diff cross under 0 then begin
+	low_zero = low;
+	high_zero = 0;
+	init_sell=false;
+end
+Else if diff > 0 and C > high_zero and init_buy=false then begin
+	//plot4(Low-avgtruerange(20)/4,"buy above zero");
+	init_buy = true;
+End
+Else if diff < 0 and C < low_zero and init_sell=false then begin
+	//plot5(High+-avgtruerange(20)/4,"sell below zero");
+	init_sell=true;
+End;
+
+
+
