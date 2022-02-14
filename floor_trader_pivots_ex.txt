@@ -1,0 +1,2018 @@
+
+{
+This study is an indicator used to plot floor trader pivots for Daily pivots, 
+Weekly pivots, Monthly pivots, Quarterly pivots, or Yearly pivots.  The
+'PivotInterval' input is used to specify which pivot interval to use.
+
+The 'PivotCalcType' input is used to specify the type of pivot calculations to
+use.  The indicator can calculate classic pivots, traditional pivots, or 
+Camarilla pivots.
+
+There are several inputs that control which pivot levels to plot, which, if any,
+text labels to display, pivot colors and the color transparency value to use.
+
+At the end of the session, pivot levels are calculated for tomorrow and are
+shown.  The values for tomorrow are plotted in RadarScreen.
+
+我修改了
+1、增加了报警代码,r1,s1以及pivot point不报警
+2、15分钟的时候显示了R4和S4
+}
+
+#region Namespaces 
+using tsdata.marketdata;
+using elsystem;
+using tsdata.common;
+using elsystem.drawing;
+using elsystem.drawingobjects;
+using elsystem.collections;
+#endregion
+
+inputs:
+	int PivotCalcType( 1 ) [
+		DisplayName = "PivotCalcType", 
+		ToolTip = "Pivot Calculation Type.  Enter 1 for Classic pivots; enter 2 for Traditional pivots; enter 3 for Camarilla pivots."],
+	
+	int PivotInterval( 1 ) [
+		DisplayName = "PivotInterval", 
+		ToolTip = "Enter 1 for Daily pivots; enter 2 for Weekly pivots, enter 3 for Monthly pivots, enter 4 for Quarterly pivots, enter 5 for Yearly pivots."],
+	
+	int ShowPivotLabels( 1 ) [
+		DisplayName = "ShowPivotLabels", 
+		ToolTip = "Enter 1 to show text labels for the pivot levels.  Enter 0 to not show text labels."],
+	
+	int ShowCurrentPeriodLabelsOnly( 1 ) [
+		DisplayName = "ShowCurrentPeriodLabelsOnly", 
+		ToolTip = "Enter 1 to show text labels for the current period only.  Enter 0 to show text labels for all pivot levels."],
+	
+	int ShowPriceLevelsInLabels( 1 ) [
+		DisplayName = "ShowPriceLevelsInLabels", 
+		ToolTip = "Enter 1 to include the pivot price values in the text labels.  Enter 0 to not include pivot price values."],
+	
+	int ShowPivotIntervalInLabels( 1 ) [
+		DisplayName = "ShowPivotIntervalInLabels", 
+		ToolTip = "Enter 1 to show the pivot interval in the text labels.  Enter 0 to not show the pivot interval."],
+	
+	double PercentTransparency( 0 ) [
+		DisplayName = "PercentTransparency", 
+		ToolTip = "Percentage Transparency.  Enter the desired percentage transparency of the text labels (0 = solid, 100 = clear)."],
+	
+	int R5Color( Red ) [
+		DisplayName = "R5Color", 
+		ToolTip = "Enter the color to use for the R5 pivot plot and associated text label."],
+	
+	int R4Color( MyColors( "OrangeRed" ) ) [
+		DisplayName = "R4Color", 
+		ToolTip = "Enter the color to use for the R4 pivot plot and associated text label."],
+	
+	int R3Color( MyColors( "Tomato" ) ) [
+		DisplayName = "R3Color", 
+		ToolTip = "Enter the color to use for the R3 pivot plot and associated text label."], 
+	
+	int R2Color( MyColors( "DarkOrange" ) ) [
+		DisplayName = "R2Color", 
+		ToolTip = "Enter the color to use for the R2 pivot plot and associated text label."], 
+	
+	int R1Color( MyColors( "Orange" ) ) [
+		DisplayName = "R1Color", 
+		ToolTip = "Enter the color to use for the R1 pivot plot and associated text label."], 
+	
+	int PivotColor( MyColors( "NavajoWhite" ) ) [
+		DisplayName = "PivotColor", 
+		ToolTip = "Enter the color to use for the pivot point plot and associated text label."],
+	
+	int S1Color( MyColors( "PaleGreen" ) ) [
+		DisplayName = "S1Color", 
+		ToolTip = "Enter the color to use for the S1 pivot plot and associated text label."], 
+	
+	int S2Color( MyColors( "SpringGreen" ) ) [
+		DisplayName = "S2Color", 
+		ToolTip = "Enter the color to use for the S2 pivot plot and associated text label."], 
+	
+	int S3Color( MyColors( "LimeGreen" ) ) [
+		DisplayName = "S3Color", 
+		ToolTip = "Enter the color to use for the S3 pivot plot and associated text label."], 
+	
+	int S4Color( MyColors( "Lime" ) ) [
+		DisplayName = "S4Color", 
+		ToolTip = "Enter the color to use for the S4 pivot plot and associated text label."],
+	
+	int S5Color( Green ) [
+		DisplayName = "S5Color", 
+		ToolTip = "Enter the color to use for the S5 pivot plot and associated text label."],
+	
+	int ShowR5( 1 ) [
+		DisplayName = "ShowR5", 
+		ToolTip = "Enter 1 to plot the R5 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowR4( 1 ) [
+		DisplayName = "ShowR4", 
+		ToolTip = "Enter 1 to plot the R4 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowR3( 1 ) [
+		DisplayName = "ShowR3", 
+		ToolTip = "Enter 1 to plot the R3 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowR2( 1 ) [
+		DisplayName = "ShowR2", 
+		ToolTip = "Enter 1 to plot the R2 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowR1( 1 ) [
+		DisplayName = "ShowR1", 
+		ToolTip = "Enter 1 to plot the R1 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowPP( 1 ) [
+		DisplayName = "ShowPP", 
+		ToolTip = "Enter 1 to plot the pivot point level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowS1( 1 ) [
+		DisplayName = "ShowS1", 
+		ToolTip = "Enter 1 to plot the S1 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowS2( 1 ) [
+		DisplayName = "ShowS2", 
+		ToolTip = "Enter 1 to plot the S2 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowS3( 1 ) [
+		DisplayName = "ShowS3", 
+		ToolTip = "Enter 1 to plot the S3 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."],
+	
+	int ShowS4( 1 ) [
+		DisplayName = "ShowS4", 
+		ToolTip = "Enter 1 to plot the S4 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."], 
+	
+	int ShowS5( 1 ) [
+		DisplayName = "ShowS5", 
+		ToolTip = "Enter 1 to plot the S5 pivot level and draw the associated text label (if text labels are set to show); enter 0 to not plot the pivot value."], 
+	
+	double TextLabelFontSize( 8.0 ) [
+		DisplayName = "TextLabelFontSize", 
+		ToolTip = "Enter the font size for the text labels on the lines"];
+
+constants:
+	int DAILY_PIVOTS( 1 ),
+	int WEEKLY_PIVOTS( 2 ),
+	int MONTHLY_PIVOTS( 3 ),
+	int QUARTERLY_PIVOTS( 4 ),
+	int YEARLY_PIVOTS( 5 ),
+	int MAX_TEXT_LABELS_ALLOWED( 4000 ),
+	string TRENDLINE_LEVEL_KEY( "TLLevel" ),
+	string TRENDLINE_COLOR_KEY( "TLColor" ),
+	string R5_KEY( "R5" ),
+	string R4_KEY( "R4" ),
+	string R3_KEY( "R3" ),
+	string R2_KEY( "R2" ),
+	string R1_KEY( "R1" ),
+	string PP_KEY( "PP" ),
+	string S1_KEY( "S1" ),
+	string S2_KEY( "S2" ),
+	string S3_KEY( "S3" ),
+	string S4_KEY( "S4" ),
+	string S5_KEY( "S5" );
+	
+variables:
+	TokenList TokenListOfLevels( NULL ),
+	Vector CurrentTextLabelVector( NULL ),
+	Vector AllTextLabelsVector( NULL ),
+	Vector TrendlineVector( NULL ),
+	Vector TomorrowTextLabelVector( NULL ),
+	Dictionary DOColorDict( NULL ), 
+	Dictionary PlotColorDict( NULL ),
+	PriceSeriesProvider PivotsPSP( NULL ),
+	QuotesProvider QP1( NULL ),
+	intrabarpersist bool InputsAreOkay( true ),
+	intrabarpersist bool UseBNPoint( false ),
+	intrabarpersist bool RealTime( false ),
+	intrabarpersist bool InAChart( false ),
+	intrabarpersist bool AllowTransparentPlots( true ),
+	intrabarpersist int DecimalPlaces( 0 ),
+	intrabarpersist int BT( 0 ),
+	intrabarpersist bool OkToCalc( false ),
+	intrabarpersist int PSPIndexOffset( 0 ),
+	intrabarpersist string PivotIntervalString( "" ),
+    intrabarpersist double S1( 0 ),
+	intrabarpersist double S2( 0 ),
+	intrabarpersist double S3( 0 ),
+	intrabarpersist double S4( 0 ),
+	intrabarpersist double S5( 0 ),
+	intrabarpersist double R1( 0 ),
+	intrabarpersist double R2( 0 ),
+	intrabarpersist double R3( 0 ),
+	intrabarpersist double R4( 0 ),
+	intrabarpersist double R5( 0 ),
+	intrabarpersist double PP( 0 ),
+	intrabarpersist double S1Tom( 0 ),
+	intrabarpersist double S2Tom( 0 ),
+	intrabarpersist double S3Tom( 0 ),
+	intrabarpersist double S4Tom( 0 ),
+	intrabarpersist double S5Tom( 0 ),
+	intrabarpersist double R1Tom( 0 ),
+	intrabarpersist double R2Tom( 0 ),
+	intrabarpersist double R3Tom( 0 ),
+	intrabarpersist double R4Tom( 0 ),
+	intrabarpersist double R5Tom( 0 ),
+	intrabarpersist double PPTom( 0 ),
+	intrabarpersist int TransparencyValue( 255 ),
+	intrabarpersist int ReuseIndex( 0 ),
+	intrabarpersist bool TomorrowsPivotsShowing( true );
+
+method void Init()
+begin
+	BT = BarType;
+	InAChart = GetAppInfo( aiApplicationType ) = cChart;
+	ErrorCheckInputValues();
+	CreateTokenListOfLevels();
+	
+	{
+	the value of PercentTransparency, which is a percentage, must be
+	converted to a value between 0 and 255 for use in the ARGB statements,
+	below
+	}
+	if InAChart = false then
+	begin
+		{
+		in grid applications such as RadarScreen, we will not use any transparency 
+		value so that the values are more easily seen (the colors used for the plots
+		in both Charting and RadarScreen are set by the inputs, which includes the 
+		PercentTransparency input)
+		}
+		TransparencyValue = 255;
+	end
+	else
+	begin
+		if PercentTransparency < 0 then
+			TransparencyValue = 255
+		else if PercentTransparency > 100 then
+			TransparencyValue = 0
+		else	
+			TransparencyValue = Round( 0.01 * ( 100 - PercentTransparency ) *
+	 	 	 255, 0 ) astype int;
+	end;
+	
+	{ 
+	now that we have the transparency value, we will set the colors to be used 
+	for the plots, trendlines, and text labels
+	}
+	LoadDOColorsIntoDictionary();
+	LoadPlotColorsIntoDictionary();
+	
+	CreateTrendlinesForTomorrowsPivots();
+	CreateTextLabelsForTomorrowsPivots();
+	
+	{
+	if the bar interval and pivot interval do not allow for transparent colors,
+	we will set the 'AllowTransparentPlots' variable to false, otherwise it is
+	set to true; for example, if the chart interval is Daily and we have
+	the pivots set for Daily pivots, setting the transparent color will remove
+	all plots from being seen since we have a new period starting on each bar;
+	for this case, the 'AllowTransparentPlots' variable is set to false
+	}
+	if ( BT = 2 and PivotInterval = DAILY_PIVOTS )
+		or ( BT = 3 and PivotInterval = WEEKLY_PIVOTS ) 
+		or ( BT = 4 and PivotInterval = MONTHLY_PIVOTS )
+		or ( BT = 0 ) { tick bar or volume bar }
+		or ( BT > 4 and BT <> 14 ) then { advanced bar }
+	begin
+		AllowTransparentPlots = false;
+	end
+	else
+	begin
+		AllowTransparentPlots = true;
+	end;
+	
+	PivotIntervalString = GetPivotIntervalString();
+	
+	{
+	When this study is applied to tick bars or advanced bars, we use BNPoint 
+	positioning of text  labels.  This ensures that the text labels are positioned 
+	on the correct bar even when multiple bars occur in the same second (as can 
+	occur with very short-term tick bars).  When positioning time-based bars, on 
+	the other hand, we’ll use DTPoint positioning.  This type of positioning can 
+	account for missing bars in the data stream (periods of no trading activity, 
+	as can occur with ‘thin’ issues).  Missing bars, of course, cannot occur when 
+	using tick-based charts or advanced bars, since these bar-building mechanisms 
+	do not move along the x-axis until enough trades have occurred to complete a 
+	bar.  Thus, the approach illustrated here gives us the best of both worlds 
+	– sub-second positioning and automatic accounting for missing bars.
+	}
+	UseBNPoint = BT = 0 or ( BT > 4 and BT <> 14 );
+	
+	DecimalPlaces = NumDecimals( PriceScale );
+	
+	CreateAndLoadPSP();
+end;
+
+
+#region DataProviders
+
+{
+we will use a PriceSeriesProvider object for the pivot level calculations so
+we don't have to rely on intraday data on the chart; this allows us to use
+the settlement prices as well as allows the chart to have less data on it 
+depending on the type of pivots; for example, if Monthly pivots are desired,
+an intraday chart would need at least one month of data on the chart
+}
+method void CreateAndLoadPSP()
+begin
+	PivotsPSP = new PriceSeriesProvider();
+	PivotsPSP.Symbol = Symbol;
+	ConfigureDataIntervalAndRange();
+	
+	{ we don't need volume for this indicator }
+	PivotsPSP.IncludeVolumeInfo = false;
+	PivotsPSP.IncludeTicksInfo = false;
+	PivotsPSP.UseNaturalHours = false;
+	PivotsPSP.Realtime = true;
+	PivotsPSP.TimeZone = ConvertTimeZone();
+	PivotsPSP.StateChanged += PivotsPSP_StateChanged;
+	PivotsPSP.Updated += PivotsPSP_Updated;
+	PivotsPSP.LoadProvider();
+	Value1 = PivotsPSP.Count; { force PriceSeriesProvider to load }
+end;
+
+method void PivotsPSP_StateChanged( Object sender, StateChangedEventArgs args )
+begin
+	{ if the PriceSeriesProvider object fails to load, we will throw an exception 
+	  to inform the user }
+	switch ( args.NewState )
+	begin
+		case DataState.Failed:
+			throw Exception.Create( !( "PriceSeriesProvider failed to load." ) );
+	end;
+end;
+
+method void PivotsPSP_Updated( Object sender, PriceSeriesUpdatedEventArgs args )
+begin
+	switch ( args.Reason )
+	begin
+		case PriceSeriesUpdateReason.BarClose:
+			{
+			if the bar that just closed is the last bar of the session, 
+			we will show the next period pivots; this allows the user
+			to see the upcoming pivot levels for the next period; for
+			example, if the chart is a 5-min chart with Daily pivots 
+			applied, when the Daily bar closes for today, this code will
+			calculate and show the pivots that are calculated for tomorrow
+			}
+			if PivotsPSP.LastBarIsSessionClosed then
+			begin
+				ShowTomorrowsPivots();
+				{
+				after the bar closes at session end, the exchange can update the 
+				settlement prices; we will use a QuotesProvider to detect a change 
+				in DailyClose and update the pivot levels for tomorrow
+				}
+				CreateAndLoadQuotesProvider();
+			end;
+		
+		default:
+			{
+			for other than a session close, we will stop the QuotesProvider; this provider
+			is used to detect changes to DailyClose quote field so we can update the
+			pivot values after hours as settlement values arrive; once we have an event
+			other than bar close, we don't need the QuotesProvider loaded any more since 
+			the main code will run and update the pivot levels to the appropriate values
+			}
+			if QP1 <> NULL then
+				QP1.CloseProvider();	
+	end;	
+end;
+
+method void ConfigureDataIntervalAndRange()
+variables:  DateTime tempDT;
+begin
+	{
+	we will load some additional bars of data so that we have pivot levels on 
+	CurrentBar 1; we will use tempDT and additional bars of data and then use
+	tempDT as the 'FirstDate' of the PSP Range property; note that adding a 
+	negative time frame (e.g., AddDays( - 10 )), moves the DateTime to an earlier
+	DateTime by the amount specified
+	}
+	tempDT = BarDateTime[MaxBarsBack];
+	
+	switch ( PivotInterval )
+	begin
+		case DAILY_PIVOTS:
+			PivotsPSP.Interval.SetAsDailyBarChart();
+			tempDT.AddDays( -10 );
+			PivotsPSP.Range.FirstDate = tempDT;
+
+		case WEEKLY_PIVOTS:
+			PivotsPSP.Interval.SetAsWeeklyBarChart();
+			tempDT.AddWeeks( -2 );
+			PivotsPSP.Range.FirstDate = tempDT;
+
+		case MONTHLY_PIVOTS:
+			PivotsPSP.Interval.SetAsMonthlyBarChart();
+			tempDT.AddMonths( -2 );
+			PivotsPSP.Range.FirstDate = tempDT;
+
+		case QUARTERLY_PIVOTS:
+			{ for quarterly pivots, we will use a monthly PSP since that is the
+			  biggest available bar interval }
+			PivotsPSP.Interval.SetAsMonthlyBarChart();
+			tempDT.AddMonths( -4 );
+			PivotsPSP.Range.FirstDate = tempDT;
+	
+		case YEARLY_PIVOTS:
+			{ for yearly pivots, we will use a monthly PSP since that is the
+			  biggest available bar interval }
+			PivotsPSP.Interval.SetAsMonthlyBarChart();
+			tempDT.AddYears( -2 );
+			PivotsPSP.Range.FirstDate = tempDT;
+	end;
+end;
+
+{ 
+the data stream TimeZone and the TimeZone used in DataProviders are from 
+different classes; this method is used to provide the cross-reference between the
+two so that the DataProvider TimeZone can be set to the same TimeZone as the 
+data stream to which this indicator is applied 
+}
+method tsdata.common.TimeZone ConvertTimeZone()
+begin
+	switch ( AnalysisTechnique.DataStreams.DefaultStream.TimeZone )
+	begin
+		case elsystem.TimeZone.Exchange:
+			return tsdata.common.TimeZone.Exchange;
+		
+		case elsystem.TimeZone.Local:
+			return tsdata.common.TimeZone.Local;
+	end;	
+end;
+
+{
+the QuotesProvider is for the quote field 'DailyClose'; this is used to detect
+a change to the settlement price after hours; if we get an udpated event, it 
+means the DailyClose has been updated; we need to update and show tomorrow's 
+pivots
+}
+method void CreateAndLoadQuotesProvider()
+begin
+	QP1 = new QuotesProvider();
+	QP1.Symbol = Symbol;
+	QP1.Realtime = true;
+	QP1.TimeZone = ConvertTimeZone();
+	QP1.Fields += QuoteFields.DailyClose;
+	QP1.Updated += QP1_Updated;
+	QP1.LoadProvider();
+end;
+
+method void QP1_Updated( Object sender, QuoteUpdatedEventArgs args )
+begin
+	{ see code commentary for the QuotesProvider creation }
+	ShowTomorrowsPivots();
+end;
+
+{ DataProviders region }
+#endregion
+
+	
+#region TextLabels
+
+method void SetupNewTextLabels()
+variables:  
+	TextLabel tempTextLabel, 
+	string Spacer,
+	string LabelTextString,
+	string PivotLevelString,
+	double tempPivotPrice;
+begin
+	{
+	if the DrawingObjects collection is NULL (drawing objects are not available
+	in applications other than Charting) or the user has selected to NOT draw
+	text labels, just exit this method
+	}
+	if DrawingObjects = NULL or ShowPivotLabels <> 1 then
+		return;
+	
+	{
+	if we are showing the current period labels only and we have already created
+	the labels (i.e., CurrentTextLabelVector <> NULL), we will move the text labels
+	to the new period and exit since we	don't need to create more labels
+	}
+	if ShowCurrentPeriodLabelsOnly = 1 and CurrentTextLabelVector <> NULL then
+	begin
+		MoveTextLabelsToNewPeriod();
+		return;
+	end;
+	
+	Spacer = Spaces( 1 );
+	
+	if CurrentTextLabelVector = NULL then
+		CurrentTextLabelVector = new Vector();
+	
+	if AllTextLabelsVector = NULL then
+		AllTextLabelsVector = new Vector();
+	
+	{
+	the CurrentTextLabelVector vector holds the text labels for the current pivot
+	period; we are about to create new labels for the new period, so we need to 
+	clear the prior period text labels out of the Vector and we will add the new 
+	labels to the Vector when we create them below
+	}
+	CurrentTextLabelVector.Clear();
+	
+	if ShowS1 = 1 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( S1_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	if ShowS2 = 1 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( S2_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	if ShowS3 = 1 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( S3_KEY );	
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	if ShowR1 = 1 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( R1_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	if ShowR2 = 1 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( R2_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	if ShowR3 = 1 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( R3_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	{ don't show PP for camarilla pivots }
+	if ShowPP = 1 and PivotCalcType <> 3 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( PP_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	{
+	Levels S4, S5, R4, and R5 apply only to certain pivot types (e.g., traditional,
+	camarilla pivots, etc.); therefore,	we need to ensure they are not zero (i.e., 
+	they have been calculated) before we create text labels for them
+	}
+	if ShowR4 = 1 and R4 <> 0 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( R4_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	if ShowR5 = 1 and R5 <> 0 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( R5_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	if ShowS4 = 1 and S4 <> 0 then
+	begin
+		tempTextLabel = GetTextLabelForPivotLevel( S4_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+	
+	if ShowS5 = 1 and S5 <> 0 then
+	begin	 
+		tempTextLabel = GetTextLabelForPivotLevel( S5_KEY );
+		SetTextLabelColor( tempTextLabel );
+		CurrentTextLabelVector.push_back( tempTextLabel );
+	end;
+end;
+
+{ this method is called when we need to get a text label for a new period }
+method TextLabel GetTextLabelForPivotLevel( string iPivotLevel )
+variables:  TextLabel tempTextLabel;
+begin
+	{
+	to prevent getting the warning message when 5,000 text labels are created,
+	we will check to see what the text label count is; if the count is less than
+	the value specified by the 'MAX_TEXT_LABELS_ALLOWED' constant, we will create 
+	a new text label and return it from this method; if the count exceeds the 
+	value specified by the 'MAX_TEXT_LABELS_ALLOWED' constant, we will get a text 
+	label created earlier and 'recycle' it to be used for the new period
+	
+	note that we have no way to know which study or strategy created the text 
+	labels returnd by the DrawingObjects collection; therefore, this method only
+	tries to ensure that this study does not cause the triggering of the 5,000
+	text labels warning; note that if the number of text labels on the chart
+	(from all sources, including manually drawn text labels and text labels drawn
+	by other studies/strategies) is already	greater than the value specified by 
+	the 'MAX_TEXT_LABELS_ALLOWED' constant when this study is placed on the chart,
+	no text labels will be displayed by this indicator (except for tomorrow's
+	pivots)
+	}
+	if DrawingObjects[ObjectCategory.TextLabel].Count < MAX_TEXT_LABELS_ALLOWED then
+	begin
+		tempTextLabel = new TextLabel();
+		AllTextLabelsVector.push_back( tempTextLabel );
+		
+		{ 
+		to 'show' the text label, the text label is added to the DrawingObjects 
+		collection; if you want to remove the text label, you can use the Delete 
+		method of the DrawingObjects class; DrawingObjects collection is not 
+		available in RadarScreen (it is NULL), so we only add the TextLabel to 
+		the collection if the DrawingObjects collection is not NULL
+		}
+		if DrawingObjects <> NULL then
+			DrawingObjects.Add( tempTextLabel );
+	end
+	else
+	begin
+		tempTextLabel = GetTextLabelFromVector();
+	end;
+
+	ConfigureTextLabel( tempTextLabel, iPivotLevel );
+	
+	return tempTextLabel;
+end;
+
+method void ConfigureTextLabel( TextLabel tempTextLabel, string iPivotLevel )
+variables:  double Price;
+begin
+	if tempTextLabel = NULL then
+		return;
+	
+	tempTextLabel.Tag = iPivotLevel;
+	Price = GetPriceForPivotLabel( iPivotLevel );
+	
+	{ 
+	see code commentary in once block that describes how we will anchor text 
+	labels
+	}
+	if UseBNPoint then
+		tempTextLabel.SetPointValue( BNPoint.Create( GetDOBarNumberForCurrentBar(), 
+		 Price ) )
+	else
+		tempTextLabel.SetPointValue( DTPoint.Create( BarDateTime, Price ) );
+	
+	tempTextLabel.TextString = GetTextLabelText( iPivotLevel );
+	tempTextLabel.HStyle = HorizontalStyle.Left;
+	
+	{
+	we will place support levels (e.g., S1, S2, etc.) above the plotted line
+	and the resistance levels (e.g., R1, R2, etc. ) and the pivot level below
+	the plotted line so they are visible in the case where the plotted value
+	is at the bottom (in the case of support levels) or top (in the case of 
+	resistance levels) so that the text label is visible
+	}
+	if LeftStr( iPivotLevel, 1 ) = "S" then
+		tempTextLabel.VStyle = VerticalStyle.Bottom
+	else
+		tempTextLabel.VStyle = VerticalStyle.Top;
+	
+	tempTextLabel.Lock = true; { prevent inadvertent moving }
+	
+	{ 
+	Setting 'Persist' to false causes the text label to be deleted on an 
+	intrabar tick.  When set to false, a text label that is created on the 
+	closing tick of the bar	is saved/retained.
+	}
+	tempTextLabel.Persist = false;
+	
+	if TextLabelFontSize > 0 then
+	begin
+		tempTextLabel.Font = Font.Create( tempTextLabel.Font.Name, 
+		 TextLabelFontSize );
+	end;
+end;
+
+{
+in the case where we are not creating new text labels due to limiting the
+number of text labels created by this indicator, we will 'recycle' one of
+the text labels created earlier; this method will return a text label from
+the vector containing all text labels (excluding text labels for tomorrow's
+pvitos)
+
+for more, see code commentary for 'GetTextLabelForPivotLevel' method above
+}
+method TextLabel GetTextLabelFromVector()
+variables:  TextLabel tempLabel;
+begin
+	{
+	once we get to the end of the labels in the Vector, we need to
+	reset the index to start at 0 again to start over
+	}
+	if ReuseIndex >= AllTextLabelsVector.Count - 1 then
+		ReuseIndex = 0;
+	
+	tempLabel =  AllTextLabelsVector[ReuseIndex] astype TextLabel;	
+ 	ReuseIndex += 1;
+ 	
+ 	return TempLabel;
+end;
+
+{ text used in pivot level text label }
+method string GetTextLabelText( string iPivotLevel )
+variables:  string LabelTextString, string PivotLevel;
+begin
+	PivotLevel = iPivotLevel;
+	
+	LabelTextString = !( PivotLevel );
+	
+	if ShowPivotIntervalInLabels = 1 then
+		LabelTextString += "(" + PivotIntervalString + ")";
+	
+	if ShowPriceLevelsInLabels = 1 then
+		LabelTextString += ": " + NumToStr( GetPriceForPivotLabel( PivotLevel ), 
+		 DecimalPlaces );
+
+	return LabelTextString;
+end;
+
+{ 
+in the case where we are only displaying text labels for the current period,
+when a new period begins, this method is called to move the text labels to 
+the new period pivot values and update the text string
+}
+method void MoveTextLabelsToNewPeriod()
+variables:  int Counter, TextLabel tempLabel;
+begin
+	{ if the text label vector is NULL (we are not drawing text labels), or we 
+	  are not just showing the current period labels, we will	just exit }
+	if CurrentTextLabelVector = NULL or ShowCurrentPeriodLabelsOnly <> 1 then
+		return;
+			
+	for Counter = 0 to CurrentTextLabelVector.Count - 1
+	begin
+		tempLabel = CurrentTextLabelVector[Counter] astype TextLabel;
+		
+		if UseBNPoint then
+		begin
+			tempLabel.SetPointValue( BNPoint.Create( GetDOBarNumberForCurrentBar(), 
+			 GetPriceForTextLabel( tempLabel ) ) );
+		end
+		else
+		begin
+			tempLabel.SetPointValue( DTPoint.Create( BarDateTime, 
+			 GetPriceForTextLabel( tempLabel ) ) );
+		end;
+		
+		tempLabel.TextString = GetTextLabelText( tempLabel.Tag astype string );
+	end;
+end;
+
+method double GetPriceForTextLabel( TextLabel iTextLabel )
+variables:  double textLabelPrice;
+begin
+	textLabelPrice = GetPriceForPivotLabel( iTextLabel.Tag astype string );
+	return textLabelPrice;
+end;
+
+method double GetPriceForPivotLabel( string iPivotLevel )
+variables:  double textLabelPrice;
+begin
+	switch ( iPivotLevel astype string )
+	begin
+		case R5_KEY:
+			textLabelPrice = R5;
+		case R4_KEY:
+			textLabelPrice = R4;
+		case R3_KEY:
+			textLabelPrice = R3;
+		case R2_KEY:
+			textLabelPrice = R2;
+		case R1_KEY:
+			textLabelPrice = R1;
+		case PP_KEY:
+			textLabelPrice = PP;
+		case S1_KEY:
+			textLabelPrice = S1;
+		case S2_KEY:
+			textLabelPrice = S2;
+		case S3_KEY:
+			textLabelPrice = S3;
+		case S4_KEY:
+			textLabelPrice = S4;
+		case S5_KEY:
+			textLabelPrice = S5;
+	end;
+	
+	return textLabelPrice;
+end;
+
+method double GetPriceForTomorrowPivotLabel( string iPivotLevel )
+variables:  double textLabelPrice;
+begin
+	switch ( iPivotLevel astype string )
+	begin
+		case R5_KEY:
+			textLabelPrice = R5Tom;
+		case R4_KEY:
+			textLabelPrice = R4Tom;
+		case R3_KEY:
+			textLabelPrice = R3Tom;
+		case R2_KEY:
+			textLabelPrice = R2Tom;
+		case R1_KEY:
+			textLabelPrice = R1Tom;
+		case PP_KEY:
+			textLabelPrice = PPTom;
+		case S1_KEY:
+			textLabelPrice = S1Tom;
+		case S2_KEY:
+			textLabelPrice = S2Tom;
+		case S3_KEY:
+			textLabelPrice = S3Tom;
+		case S4_KEY:
+			textLabelPrice = S4Tom;
+		case S5_KEY:
+			textLabelPrice = S5Tom;
+	end;
+	
+	return textLabelPrice;
+end;
+
+method void SetTextLabelColor( TextLabel tempLabel )
+variables:  string ColorKey;
+begin
+	if tempLabel = NULL or tempLabel.Tag = NULL then
+		return;
+
+	tempLabel.Color = DOColorDict[tempLabel.Tag astype string] astype Color;
+end;
+
+method void ShowTodaysLabels()
+variables:  int Counter, TextLabel tempLabel;
+begin
+	if CurrentTextLabelVector = NULL then
+		return;
+		
+	for Counter = 0 to CurrentTextLabelVector.Count - 1
+	begin
+		tempLabel = CurrentTextLabelVector[Counter] astype TextLabel;
+		SetTextLabelColor( tempLabel ); 
+	end;
+end;
+
+method void HideTodaysLabels()
+variables:  int Counter, TextLabel tempLabel;
+begin
+	if CurrentTextLabelVector = NULL then
+		return;
+		
+	for Counter = 0 to CurrentTextLabelVector.Count - 1
+	begin
+		tempLabel = CurrentTextLabelVector[Counter] astype TextLabel;
+		tempLabel.Color = Color.Transparent; 
+	end;
+end;
+
+{ TextLabels region }
+#endregion
+
+#region PivotCalcs
+
+method void CalculateLevels()
+begin
+	switch ( PivotInterval )
+	begin
+		case DAILY_PIVOTS,WEEKLY_PIVOTS,MONTHLY_PIVOTS:
+			CalcPivotsUsingLastClosedPSPBar( PivotsPSP );
+		
+		{
+		for quarterly and yearly pivots, we are using a Monthly PSP interval since
+		that is the largest available interval; to calculate quarterly and yearly
+		pivots using monthly bars, we will need to loop through the bars and 
+		determine the period high, low, and close; therefore, we will call the
+		quarterly and yearly methods below
+		}	
+		case QUARTERLY_PIVOTS:
+			if GetQuarterForDateTime( BarDateTime ) = 1 then
+			begin
+				CalcQuarterlyPivots( PivotsPSP, BarDateTime.Year - 1, 4 );
+			end
+			else
+			begin
+				CalcQuarterlyPivots( PivotsPSP, BarDateTime.Year, 
+				 GetQuarterForDateTime( BarDateTime ) - 1 );
+			end;
+			
+		case YEARLY_PIVOTS:
+			CalcYearlyPivots( PivotsPSP, BarDateTime.Year - 1 );
+	end;
+end;
+
+method void CalcPivotsUsingLastClosedPSPBar( PriceSeriesProvider PSP )
+begin
+	{
+	we will calculate the PSP pivot values for the last 'closed' PSP bar;
+	when we are in history, the 'PSPIndexOffset' variable value is zero,
+	which references the last closed PSP bar; when we are in real-time, the
+	'PSPIndexOffset' variable value is 1, so that we are calculating the 
+	pivot values based on the last 'closed' PSP bar; note that in real time,
+	the zero index values in the PSP reference the currently forming PSP bar, 
+	so to use the last 'closed' PSP bar, we need to use the PSP values of 1 
+	PSP bar ago, which is why we set 'PSPIndexOffset' to 1 in real time
+	}
+	CalcPivotLevels( PSP.High[PSPIndexOffset], PSP.Low[PSPIndexOffset], 
+	 PSP.Close[PSPIndexOffset] );	
+end;
+
+method bool CalcQuarterlyPivots( PriceSeriesProvider PSP, int iYear, int iQuarter )
+variables:
+	double PeriodHigh,
+	double PeriodLow,
+	double PeriodClose,
+	int Counter,
+	int LastMonth,
+	int NumMonthsFound;
+begin
+	PeriodHigh = double.MinValue();
+	PeriodLow = double.MaxValue();
+	LastMonth = -1;
+	
+	{
+	for quarterly pivots, we are using a Monthly PSP interval since	that is the 
+	largest available interval; to calculate quarterly pivots using monthly bars, 
+	we will loop through the bars and determine the quarterly high, low, and close
+	}
+	for Counter = 0 to PSP.Count - 1
+	begin
+		if PSP.Time[Counter].Year = iYear and 
+		 GetQuarterForDateTime( PSP.Time[Counter] ) = iQuarter then
+		begin
+			NumMonthsFound += 1;
+			
+			if PSP.High[Counter] > PeriodHigh then
+				PeriodHigh = PSP.High[Counter];
+			if PivotsPSP.Low[Counter] < PeriodLow then
+				PeriodLow = PSP.Low[Counter];
+			
+			if PSP.Time[Counter].Month > LastMonth then
+			begin
+				PeriodClose = PSP.Close[Counter];
+				LastMonth = PSP.Time[Counter].Month;	
+			end;
+		end;
+	end;	
+	
+	{ calculate the pivot levels using the quarterly high, low, and close }
+	CalcPivotLevels( PeriodHigh, PeriodLow, PeriodClose );
+	
+	return PeriodClose <> 0 and PeriodHigh <> double.MinValue()
+	 and PeriodLow <> double.MaxValue() and NumMonthsFound = 3;
+end;
+
+method bool CalcYearlyPivots( PriceSeriesProvider PSP, int tempYear )
+variables: 
+	double PeriodHigh,
+	double PeriodLow,
+	double PeriodClose,
+	int Counter,
+	int NumMonthsFound;
+begin
+	PeriodHigh = double.MinValue();
+	PeriodLow = double.MaxValue();
+	PeriodClose = 0;
+	
+	{
+	for yearly pivots, we are using a Monthly PSP interval since that is the 
+	largest available interval; to calculate yearly pivots using monthly bars, 
+	we will loop through the bars and determine the yearly high, low, and close
+	}
+	for Counter = 0 to PSP.Count - 1
+	begin
+		{
+		we will only evaluate PSP bars where the year matches the year we are 
+		interested in calculating
+		}
+		if PSP.Time[Counter].Year = tempYear then
+		begin
+			NumMonthsFound += 1;
+			
+			if PSP.High[Counter] > PeriodHigh then
+				PeriodHigh = PSP.High[Counter];
+			if PivotsPSP.Low[Counter] < PeriodLow then
+				PeriodLow = PSP.Low[Counter];
+		
+			if PSP.Time[Counter].Month = 12 then
+				PeriodClose = PSP.Close[Counter];
+		end
+		else if PSP.Time[Counter].Year = tempYear - 1 then
+		begin
+			{
+			once we get the year that is prior to the year we are interested in,
+			we will exit the loop
+			}
+			break;
+		end;
+	end;
+	
+	{ calculate the pivot levels using the yearly high, low, and close }
+	CalcPivotLevels( PeriodHigh, PeriodLow, PeriodClose );
+	
+	return PeriodClose <> 0 and PeriodHigh <> double.MinValue()
+	 and PeriodLow <> double.MaxValue() and NumMonthsFound = 12;
+end;
+
+method void CalcPivotLevels( double iHigh, double iLow, double iClose )
+begin
+	{
+	if we don't have valid prices, we'll just exit and not calculate pivot
+	levels
+	}
+	if iHigh = 0 or iLow = 0 or iClose = 0 then
+		return;
+	
+	switch ( PivotCalcType )
+   	begin
+   		case 2: { traditional pivot levels }
+   			CalculateTradPivotLevels( iHigh, iLow, iClose );
+   		
+   		case 3: { camarilla pivot levels}	
+   			CalcCamarillaPivotLevels( iHigh, iLow, iClose );
+   		
+   		default: { classic pivot levels }
+   			CalculateClassicPivotLevels( iHigh, iLow, iClose );
+   	end;
+end;
+
+method void CalculateClassicPivotLevels( double iHigh, double iLow, 
+ double iClose )
+begin
+	PP = ( iHigh + iLow + iClose ) / 3;
+			
+	R1 = PP * 2 - iLow;
+	R2 = PP + iHigh - iLow;
+	R3 = R2 + iHigh - iLow;
+	//added on 20190619
+	if BarType = 1 and BarInterval =15 then
+		R4 = R3 + iHigh - iLow;
+	
+	S1 = PP * 2 - iHigh;
+	S2 = PP - iHigh + iLow;
+	S3 = S2 - iHigh + iLow;
+	//added on 20190619
+	if BarType = 1 and BarInterval =15 then
+		S4 = S3 - iHigh + iLow;
+end;
+
+method void CalculateTradPivotLevels( double iHigh, double iLow, 
+ double iClose )
+begin
+	PP = ( iHigh + iLow + iClose ) / 3;
+			
+	R1 = PP * 2 - iLow;
+	R2 = PP + iHigh - iLow;
+	R3 = PP * 2 + ( iHigh - 2 * iLow );
+	R4 = PP * 3 + ( iHigh - 3 * iLow );
+	R5 = PP * 4 + ( iHigh - 4 * iLow );
+	
+	S1 = PP * 2 - iHigh;
+	S2 = PP - iHigh + iLow;
+	S3 = PP * 2 - ( 2 * iHigh - iLow );
+	S4 = PP * 3 - ( 3 * iHigh - iLow );
+	S5 = PP * 4 - ( 4 * iHigh - iLow );	
+end;
+
+method void CalcCamarillaPivotLevels( double iHigh, double iLow, 
+ double iClose )
+begin
+	PP = ( iHigh + iLow + iClose ) / 3;
+			
+	R1 = iClose + ( iHigh - iLow ) * 1.1 / 12;
+	R2 = iClose + ( iHigh - iLow ) * 1.1 / 6;
+	R3 = iClose + ( iHigh - iLow ) * 1.1 / 4;
+	R4 = iClose + ( iHigh - iLow ) * 1.1 / 2;
+	
+	S1 = iClose - ( iHigh - iLow ) * 1.1 / 12; 
+	S2 = iClose - ( iHigh - iLow ) * 1.1 / 6;
+	S3 = iClose - ( iHigh - iLow ) * 1.1 / 4;
+	S4 = iClose - ( iHigh - iLow ) * 1.1 / 2;
+end;
+
+{ PivotCalcs region }
+#endregion
+
+
+#region PivotCalcs for Next Period
+
+method void CalculateLevelsForTomorrow()
+begin
+	switch ( PivotInterval )
+	begin
+		case DAILY_PIVOTS,WEEKLY_PIVOTS,MONTHLY_PIVOTS:
+			CalcPivotsForTomorrowUsingLastClosedPSPBar( PivotsPSP );
+		
+		{
+		for quarterly and yearly pivots, we are using a Monthly PSP interval since
+		that is the largest available interval; to calculate quarterly and yearly
+		pivots using monthly bars, we will need to loop through the bars and 
+		determine the period high, low, and close; therefore, we will call the
+		quarterly and yearly methods below
+		}	
+		case QUARTERLY_PIVOTS:
+			if GetQuarterForDateTime( BarDateTime ) = 1 then
+			begin
+				CalcQuarterlyPivotsForTomorrow( PivotsPSP, BarDateTime.Year - 1, 4 );
+			end
+			else
+			begin
+				CalcQuarterlyPivotsForTomorrow( PivotsPSP, BarDateTime.Year, 
+				 GetQuarterForDateTime( BarDateTime ) - 1 );
+			end;
+			
+		case YEARLY_PIVOTS:
+			CalcYearlyPivotsForTomorrow( PivotsPSP, BarDateTime.Year - 1 );
+	end;
+end;
+
+method void CalcPivotsForTomorrowUsingLastClosedPSPBar( PriceSeriesProvider PSP )
+begin
+	{
+	these pivot levels are designed to be calculated and displayed after the 
+	period has closed in real time; they are displayed to show what the new pivots 
+	will be when the code runs on the next bar, which starts a new period; 
+	therefore, the last closed bar is at index 0 so we will calculate the pivots 
+	using index 0
+	}
+	CalcPivotLevelsForTomorrow( PSP.High[0], PSP.Low[0], PSP.Close[0] );	
+end;
+
+method bool CalcQuarterlyPivotsForTomorrow( PriceSeriesProvider PSP, int iYear, 
+ int iQuarter )
+variables:
+	double PeriodHigh,
+	double PeriodLow,
+	double PeriodClose,
+	int Counter,
+	int LastMonth,
+	int NumMonthsFound;
+begin
+	PeriodHigh = double.MinValue();
+	PeriodLow = double.MaxValue();
+	LastMonth = -1;
+	
+	{
+	for quarterly pivots, we are using a Monthly PSP interval since	that is the 
+	largest available interval; to calculate quarterly pivots using monthly bars, 
+	we will loop through the bars and determine the quarterly high, low, and close
+	}
+	for Counter = 0 to PSP.Count - 1
+	begin
+		if PSP.Time[Counter].Year = iYear and 
+		 GetQuarterForDateTime( PSP.Time[Counter] ) = iQuarter then
+		begin
+			NumMonthsFound += 1;
+			
+			if PSP.High[Counter] > PeriodHigh then
+				PeriodHigh = PSP.High[Counter];
+			if PivotsPSP.Low[Counter] < PeriodLow then
+				PeriodLow = PSP.Low[Counter];
+			
+			if PSP.Time[Counter].Month > LastMonth then
+			begin
+				PeriodClose = PSP.Close[Counter];
+				LastMonth = PSP.Time[Counter].Month;	
+			end;
+		end;
+	end;	
+	
+	{ calculate the pivot levels using the quarterly high, low, and close }
+	CalcPivotLevelsForTomorrow( PeriodHigh, PeriodLow, PeriodClose );
+	
+	return PeriodClose <> 0 and PeriodHigh <> double.MinValue()
+	 and PeriodLow <> double.MaxValue() and NumMonthsFound = 3;
+end;
+
+method bool CalcYearlyPivotsForTomorrow( PriceSeriesProvider PSP, int iYear )
+variables: 
+	double PeriodHigh,
+	double PeriodLow,
+	double PeriodClose,
+	int Counter,
+	int NumMonthsFound;
+begin
+	PeriodHigh = double.MinValue();
+	PeriodLow = double.MaxValue();
+	PeriodClose = 0;
+	
+	{
+	for yearly pivots, we are using a Monthly PSP interval since that is the 
+	largest available interval; to calculate yearly pivots using monthly bars, 
+	we will loop through the bars and determine the yearly high, low, and close
+	}
+	for Counter = 0 to PSP.Count - 1
+	begin
+		{
+		we will only evaluate PSP bars where the year matches the year we are 
+		interested in calculating
+		}
+		if PSP.Time[Counter].Year = iYear then
+		begin
+			NumMonthsFound += 1;
+			
+			if PSP.High[Counter] > PeriodHigh then
+				PeriodHigh = PSP.High[Counter];
+			if PivotsPSP.Low[Counter] < PeriodLow then
+				PeriodLow = PSP.Low[Counter];
+		
+			if PSP.Time[Counter].Month = 12 then
+				PeriodClose = PSP.Close[Counter];
+		end
+		else if PSP.Time[Counter].Year = iYear - 1 then
+		begin
+			{
+			once we get the year that is prior to the year we are interested in,
+			we will exit the loop
+			}
+			break;
+		end;
+	end;
+	
+	{ calculate the pivot levels using the yearly high, low, and close }
+	CalcPivotLevelsForTomorrow( PeriodHigh, PeriodLow, PeriodClose );
+	
+	return PeriodClose <> 0 and PeriodHigh <> double.MinValue()
+	 and PeriodLow <> double.MaxValue() and NumMonthsFound = 12;
+end;
+
+method void CalcPivotLevelsForTomorrow( double iHigh, double iLow, double iClose )
+begin
+	{
+	if we don't have valid prices, we'll just exit and not calculate pivot
+	levels
+	}
+	if iHigh = 0 or iLow = 0 or iClose = 0 then
+		return;
+	
+	switch ( PivotCalcType )
+   	begin
+   		case 2: { traditional pivot levels }
+   			CalcTradPivotLevelsForTomorrow( iHigh, iLow, iClose );
+   		
+   		case 3: { camarilla pivot levels}	
+   			CalcTomCamarillaPivotLevels( iHigh, iLow, iClose );
+   				
+   		default: { classic pivot levels }
+   			CalcClassicPivotLevelsForTomorrow( iHigh, iLow, iClose );
+   	end;
+end;
+
+method void CalcClassicPivotLevelsForTomorrow( double iHigh, double iLow, 
+ double iClose )
+begin
+	PPTom = ( iHigh + iLow + iClose ) / 3;
+			
+	R1Tom = PPTom * 2 - iLow;
+	R2Tom = PPTom + iHigh - iLow;
+	R3Tom = R2Tom + iHigh - iLow;
+	
+	S1Tom = PPTom * 2 - iHigh;
+	S2Tom = PPTom - iHigh + iLow;
+	S3Tom = S2Tom - iHigh + iLow; 
+end;
+
+method void CalcTradPivotLevelsForTomorrow( double iHigh, double iLow, 
+ double iClose )
+begin
+	PPTom = ( iHigh + iLow + iClose ) / 3;
+			
+	R1Tom = PP * 2 - iLow;
+	R2Tom = PP + iHigh - iLow;
+	R3Tom = PP * 2 + ( iHigh - 2 * iLow );
+	R4Tom = PP * 3 + ( iHigh - 3 * iLow );
+	R5Tom = PP * 4 + ( iHigh - 4 * iLow );
+	
+	S1Tom = PP * 2 - iHigh;
+	S2Tom = PP - iHigh + iLow;
+	S3Tom = PP * 2 - ( 2 * iHigh - iLow );
+	S4Tom = PP * 3 - ( 3 * iHigh - iLow );
+	S5Tom = PP * 4 - ( 4 * iHigh - iLow );	
+end;
+
+method void CalcTomCamarillaPivotLevels( double iHigh, double iLow, 
+ double iClose )
+begin
+	PPTom = ( iHigh + iLow + iClose ) / 3;
+			
+	R1Tom = iClose + ( iHigh - iLow ) * 1.1 / 12;
+	R2Tom = iClose + ( iHigh - iLow ) * 1.1 / 6;
+	R3Tom = iClose + ( iHigh - iLow ) * 1.1 / 4;
+	R4Tom = iClose + ( iHigh - iLow ) * 1.1 / 2;
+	
+	S1Tom = iClose - ( iHigh - iLow ) * 1.1 / 12; 
+	S2Tom = iClose - ( iHigh - iLow ) * 1.1 / 6;
+	S3Tom = iClose - ( iHigh - iLow ) * 1.1 / 4;
+	S4Tom = iClose - ( iHigh - iLow ) * 1.1 / 2;
+end;
+
+{ PivotCalcs for Next Period }
+#endregion
+
+
+#region Helper Methods
+
+method void CreateTokenListOfLevels()
+begin
+	TokenListOfLevels = new TokenList();
+	
+	TokenListOfLevels += R5_KEY;
+	TokenListOfLevels += R4_KEY;
+	TokenListOfLevels += R3_KEY;
+	TokenListOfLevels += R2_KEY;
+	TokenListOfLevels += R1_KEY;
+	TokenListOfLevels += PP_KEY;
+	TokenListOfLevels += S1_KEY;
+	TokenListOfLevels += S2_KEY;
+	TokenListOfLevels += S3_KEY;
+	TokenListOfLevels += S4_KEY;
+	TokenListOfLevels += S5_KEY;
+end;
+
+method int GetDOBarNumberForCurrentBar()
+begin
+	{
+	this method returns the bar number that is used for drawing objects
+	for the current bar; the drawing object bar number is zero-based and
+	the first bar (index 0) is the first bar visible on the chart;  therefore,
+	the bar number used by the drawing objects for the current bar is 
+	obtained by the CurrentBar plus MaxBarsBack - 1 (we have to subtract 1
+	to get to a zero-based value)
+	}
+	return CurrentBar + MaxBarsBack - 1;
+end;
+
+method void LoadDOColorsIntoDictionary()
+begin
+	DOColorDict = new Dictionary();
+	
+	{ add colors for text labels and trendlines }
+	DOColorDict.Add( R5_KEY, GetColorFromInteger( TransparencyValue, R5Color ) 
+	 astype Color );
+	DOColorDict.Add( R4_KEY, GetColorFromInteger( TransparencyValue, R4Color ) 
+	 astype Color );
+	DOColorDict.Add( R3_KEY, GetColorFromInteger( TransparencyValue, R3Color )
+	 astype Color );
+	DOColorDict.Add( R2_KEY, GetColorFromInteger( TransparencyValue, R2Color )
+	 astype Color );
+	DOColorDict.Add( R1_KEY, GetColorFromInteger( TransparencyValue, R1Color )
+	 astype Color );
+	DOColorDict.Add( PP_KEY, GetColorFromInteger( TransparencyValue, PivotColor )
+	 astype Color );
+	DOColorDict.Add( S1_KEY, GetColorFromInteger( TransparencyValue, S1Color )
+	 astype Color );
+	DOColorDict.Add( S2_KEY, GetColorFromInteger( TransparencyValue, S2Color )
+	 astype Color );
+	DOColorDict.Add( S3_KEY, GetColorFromInteger( TransparencyValue, S3Color )
+	 astype Color );
+	DOColorDict.Add( S4_KEY, GetColorFromInteger( TransparencyValue, S4Color ) 
+	 astype Color );
+	DOColorDict.Add( S5_KEY, GetColorFromInteger( TransparencyValue, S5Color ) 
+	 astype Color );
+end;
+
+method void LoadPlotColorsIntoDictionary()
+begin
+	PlotColorDict = new Dictionary();
+	
+	{ add colors for plots; note that plot colors use color integer values }
+	PlotColorDict.Add( R5_KEY, ARGB( TransparencyValue, GetRValue( R5Color ),
+	 GetGValue( R5Color ), GetBValue( R5Color ) ) astype int );
+	PlotColorDict.Add( R4_KEY, ARGB( TransparencyValue, GetRValue( R4Color ),
+	 GetGValue( R4Color ), GetBValue( R4Color ) ) astype int );
+	PlotColorDict.Add( R3_KEY, ARGB( TransparencyValue, GetRValue( R3Color ),
+	 GetGValue( R3Color ), GetBValue( R3Color ) ) astype int );
+	PlotColorDict.Add( R2_KEY, ARGB( TransparencyValue, GetRValue( R2Color ),
+	 GetGValue( R2Color ), GetBValue( R2Color ) ) astype int );
+	PlotColorDict.Add( R1_KEY, ARGB( TransparencyValue, GetRValue( R1Color ),
+	 GetGValue( R1Color ), GetBValue( R1Color ) ) astype int );
+	PlotColorDict.Add( PP_KEY, ARGB( TransparencyValue, GetRValue( 
+	 PivotColor ), GetGValue( PivotColor ), GetBValue( PivotColor ) ) astype int );
+	PlotColorDict.Add( S1_KEY, ARGB( TransparencyValue, GetRValue( S1Color ),
+	 GetGValue( S1Color ), GetBValue( S1Color ) ) astype int );
+	PlotColorDict.Add( S2_KEY, ARGB( TransparencyValue, GetRValue( S2Color ),
+	 GetGValue( S2Color ), GetBValue( S2Color ) ) astype int );
+	PlotColorDict.Add( S3_KEY, ARGB( TransparencyValue, GetRValue( S3Color ),
+	 GetGValue( S3Color ), GetBValue( S3Color ) ) astype int );
+	PlotColorDict.Add( S4_KEY, ARGB( TransparencyValue, GetRValue( S4Color ),
+	 GetGValue( S4Color ), GetBValue( S4Color ) ) astype int );
+	PlotColorDict.Add( S5_KEY, ARGB( TransparencyValue, GetRValue( S5Color ),
+	 GetGValue( S5Color ), GetBValue( S5Color ) ) astype int );
+end;
+
+method void ErrorCheckInputValues()
+begin
+	switch ( PivotInterval )
+	begin
+		case DAILY_PIVOTS:
+			if BT = 3 or BT = 4 then
+			begin
+				InputsAreOkay = false;
+				ProcessError( !( "Daily pivots cannot be applied to Weekly or Monthly bars." ) );
+			end;
+			
+		case WEEKLY_PIVOTS:
+			if BT = 4 then
+			begin
+				InputsAreOkay = false;
+				ProcessError( !( "Weekly pivots cannot be applied to Monthly bars." ) );
+			end;
+		
+		case MONTHLY_PIVOTS:
+			{ for future use }
+			break;
+		
+		case QUARTERLY_PIVOTS:
+			{ for future use }
+			break;
+		
+		case YEARLY_PIVOTS:
+			{ for future use }
+			break;
+	
+		default:
+			InputsAreOkay = false;
+			ProcessError( !( "'PivotInterval' input must be set to 1, 2, 3, 4, or 5." ) );
+	end;
+end;
+
+method void ProcessError( string ErrorMsg )
+begin
+	{
+	if we are in a Chart, we will display an information dialog; if in a grid
+	application like RadarScreen, we will throw an exception to prevent having
+	too many information dialogs displayed
+	}
+	if InAChart then
+		ShowInfoBox( ErrorMsg, !( "Input Error" ) )
+	else
+		throw Exception.Create( ErrorMsg );
+end;
+
+{ convert integer color to a color object and return the color object }
+method Color GetColorFromInteger( int Alpha, int ColorInteger )
+begin
+	return Color.FromARGB( Alpha, GetRValue( ColorInteger ), 
+	 GetGValue( ColorInteger ), GetBValue( ColorInteger ) );
+end;
+
+{ this string is used in the text labels to identify the pivot interval }
+method string GetPivotIntervalString()
+variables:  string ReturnString;
+begin
+	switch ( PivotInterval )
+	begin
+		case DAILY_PIVOTS:
+			ReturnString = !( "D" );
+		
+		case WEEKLY_PIVOTS:
+			ReturnString = !( "W" );
+		
+		case MONTHLY_PIVOTS:
+			ReturnString = !( "M" );
+		
+		case QUARTERLY_PIVOTS:
+			ReturnString = !( "Q" );
+		
+		case YEARLY_PIVOTS:
+			ReturnString = !( "Y" );
+	end;
+	
+	return ReturnString;
+end;
+
+method void SetPlotsToTransparent()
+begin
+	{
+	if the bar interval and pivot interval do not allow for transparent colors,
+	we will just exit; see code commentary in once block below which describes
+	setting of the 'AllowTransparentPlots' variable
+	}
+	if AllowTransparentPlots = false then
+		return;
+	
+	{
+	when we transition to a new period, we will calculate new pivot levels; setting
+	the plot color from 1 bar ago to transparent removes the 'connector' between
+	the old pivots and the new pivots
+	}
+	SetPlotColor[1]( 1, Transparent );
+   	SetPlotColor[1]( 2, Transparent );
+   	SetPlotColor[1]( 3, Transparent );
+   	SetPlotColor[1]( 4, Transparent );
+   	SetPlotColor[1]( 5, Transparent );
+   	SetPlotColor[1]( 6, Transparent );
+   	SetPlotColor[1]( 7, Transparent );
+   	SetPlotColor[1]( 8, Transparent );
+   	SetPlotColor[1]( 9, Transparent );
+   	SetPlotColor[1]( 10, Transparent );
+   	SetPlotColor[1]( 11, Transparent );
+end;
+
+method int GetQuarterForDateTime( DateTime iDateTime )
+variables:  int ReturnQuarter;
+begin
+	switch ( iDateTime.Month )
+	begin
+		case 1,2,3:
+			ReturnQuarter = 1;
+			
+		case 4,5,6:
+			ReturnQuarter = 2;
+			
+		case 7,8,9:
+			ReturnQuarter = 3;
+
+		case 10,11,12:
+			ReturnQuarter = 4;
+	end;
+
+	return ReturnQuarter;
+end;
+
+method void ShowTomorrowsPivots()
+variables:  
+	int Counter, 
+	double TLPrice,
+	double TextLabelPrice,
+	TextLabel tempLabel, 
+	Trendline TL,
+	string iPivotLevel,
+	Dictionary TLDict;
+begin
+	{
+	if the trendlines for tomorrows pivots have not been created (vector is null),
+	we will exit
+	}
+	if TrendLineVector = NULL then
+		return;
+	
+	{ we need to calculate the levels prior to showing them }
+	CalculateLevelsForTomorrow();
+	
+	{
+	if the pivots have not changed, we will not show the trendlines and
+	text labels; this can occur, for example, in the post market session
+	for stocks when using Daily pivot levels; in this case, the post 
+	market pivots already reflect tomorrow's pivots so we don't need to 
+	show them
+	}
+	if PPTom = PP and S1Tom = S1 and R1Tom = R1 then
+		return;
+		
+	for Counter = 0 to TrendLineVector.Count - 1
+	begin
+		TL = TrendLineVector[Counter] astype Trendline;
+		TLDict = TL.Tag astype Dictionary;
+		iPivotLevel = TLDict[TRENDLINE_LEVEL_KEY] astype string;
+		TLPrice = GetPriceForTomorrowPivotLabel( iPivotLevel );
+		
+		{
+		if we are calculating this level (TLPrice <> 0), we will set the
+		trendline color and set the begin and end points
+		}
+		if TLPrice <> 0 then
+		begin
+			{ for camarilla pivots, the PP is not shown }
+			if PivotCalcType = 3 and iPivotLevel = PP_KEY then
+			begin
+				{ for future use }
+			end
+			else
+			begin
+				TL.Color = TLDict[TRENDLINE_COLOR_KEY] astype Color;
+				TL.SetEndPoint( DTPoint.Create( BarDateTime, TLPrice ) );
+				TL.SetStartPoint( DTPoint.Create( BarDateTime, TLPrice ) );
+			end;
+		end;
+	end;	
+	
+	for Counter = 0 to TomorrowTextLabelVector.Count - 1
+	begin
+		tempLabel = TomorrowTextLabelVector[Counter] astype TextLabel;
+		TextLabelPrice = GetPriceForTomorrowPivotLabel( tempLabel.Tag astype string );
+		
+		{
+		if we are calculating this level (TextLabelPrice <> 0), we will set the
+		text label color and string and set the point value
+		}
+		if TextLabelPrice <> 0 then
+		begin
+			{ for camarilla pivots, the PP is not shown }
+			if PivotCalcType = 3 and ( tempLabel.Tag astype string ) = PP_KEY then
+			begin
+				{ for future use }
+			end
+			else
+			begin
+				SetTextLabelColor( tempLabel );
+				tempLabel.SetPointValue( DTPoint.Create( BarDateTime, TextLabelPrice ) );
+				tempLabel.TextString = GetTextLabelTextForTom( tempLabel );
+			end;	
+		end;
+	end;
+	
+	TomorrowsPivotsShowing = true;
+end;
+
+method void RemoveTomorrowsPivots()
+variables:  
+	int Counter, 
+	TrendLine TL, 
+	TextLabel tempLabel,
+	DateTime tempDT;
+begin
+	{
+	if the trendlines for tomorrows pivots have not been created (vector is null),
+	we will exit
+	}
+	if TrendLineVector = NULL then
+		return;
+	
+	{
+	we will set the trendline and text label points propertiesto a date in the 
+	future so we don't accidentally select them; we will use this DateTime for
+	the DateTime portion of the point values
+	}
+	tempDT = BarDateTime;
+	tempDT.AddMonths( 10 );
+	
+	{
+	set trendline color to transparent for all trendlines so they are not 
+	visible
+	}	
+	for Counter = 0 to TrendLineVector.Count - 1
+	begin
+		TL = TrendLineVector[Counter] astype Trendline;
+		TL.Color = Color.Transparent;
+		TL.SetEndPoint( DTPoint.Create( tempDT, TL.EndPoint.Price ) );
+		TL.SetStartPoint( DTPoint.Create( tempDT, TL.StartPoint.Price ) );
+	end;	
+
+	{
+	set text label color to transparent for all text labels so they are not 
+	visible
+	}
+	for Counter = 0 to TomorrowTextLabelVector.Count - 1
+	begin
+		tempLabel = TomorrowTextLabelVector[Counter] astype TextLabel;
+		tempLabel.Color = Color.Transparent;
+		tempLabel.SetPointValue( DTPoint.Create( tempDT, 
+		 tempLabel.PointValue.Price ) );
+	end;
+
+	TomorrowsPivotsShowing = false;
+end;
+
+method void CreateTrendlinesForTomorrowsPivots()
+variables:	Trendline TL, int Counter;
+begin 
+	TrendlineVector = new Vector();
+	
+	{ create trendlines for tomorrows pivots for all levels }
+	for Counter = 0 to TokenListOfLevels.Count - 1
+	begin
+		TL = GetTomTrendline( TokenListOfLevels[Counter] );
+		
+		if TL <> NULL then
+		begin
+			TrendlineVector.push_back( TL );
+		
+			if DrawingObjects <> NULL then
+				DrawingObjects.Add( TL );
+		end;
+	end;
+end;
+
+method Trendline GetTomTrendline( string iPivotLevel )
+variables:  Trendline TL, Dictionary TLDict;
+begin
+	if iPivotLevel.Trim().Length = 0 then
+		return NULL;
+	
+	TL = new Trendline();
+	TL.Lock = true;
+	TL.ExtLeft = false;
+	TL.ExtRight = true;
+	TL.Persist = false;
+	TL.Color = DOColorDict[iPivotLevel] astype Color;
+	
+	TLDict = new Dictionary();
+	TLDict.Add( TRENDLINE_LEVEL_KEY, iPivotLevel astype string );
+	TLDict.Add( TRENDLINE_COLOR_KEY, TL.Color astype Color );
+	
+	TL.Tag = TLDict astype Dictionary;
+	
+	return TL;
+end;
+
+method void CreateTextLabelsForTomorrowsPivots()
+variables:  TextLabel tempLabel, int Counter;
+begin 
+	TomorrowTextLabelVector = new Vector();
+	
+	{ create text labels for tomorrows pivots for all levels }
+	for Counter = 0 to TokenListOfLevels.Count - 1
+	begin
+		tempLabel = new TextLabel();
+		tempLabel.Tag = TokenListOfLevels[Counter] astype string;
+		ConfigureTextLabelForTom( tempLabel );
+		TomorrowTextLabelVector.push_back( tempLabel );
+		
+		if DrawingObjects <> NULL then
+			DrawingObjects.Add( tempLabel );
+	end;
+end;
+
+method void ConfigureTextLabelForTom( TextLabel tempLabel )
+begin
+	if tempLabel = NULL then
+		return;
+	
+	tempLabel.TextString = GetTextLabelTextForTom( tempLabel );
+	SetTextLabelColor( tempLabel );
+	tempLabel.Lock = true;
+	tempLabel.Persist = false;
+end;
+
+{ text used in tomorrow pivot level text label }
+method string GetTextLabelTextForTom( TextLabel tempLabel )
+variables:  string LabelTextString, string PivotLevel;
+begin
+	PivotLevel = tempLabel.Tag astype string;
+	
+	LabelTextString = !( PivotLevel ) + "(" + PivotIntervalString + "): "
+	 + NumToStr( GetPriceForTomorrowPivotLabel( PivotLevel ), DecimalPlaces );
+
+	return LabelTextString;
+end;
+
+{ Helper Methods region }
+#endregion
+
+
+#region Info Box Dialog
+
+method void ShowInfoBox( string Message, string Caption )
+variables:
+	string vMessage,
+	string vCaption,
+	int XPos,
+	int YPos;
+begin
+	{
+	method parameters cannot be sent to a function as inputs, so we 
+	will first assign the parameters to local method scope variables
+	and pass those in to the InfoBox function
+	}
+	vMessage = Message;
+	vCaption = Caption;
+	
+	XPos = 300;
+	YPos = 300;
+	
+	Value1 = InfoBox( vMessage, vCaption, XPos, YPos );
+end;
+
+{ Info Box Dialog region }
+#endregion
+
+#region Main Code
+
+method void PlotOutputs()
+begin
+	{
+	plot the pivots if they have been calculated (i.e., PP <> 0); if not, 
+	we will just exit
+	}
+	if PP = 0 then
+		return;
+	
+	{
+	Levels S4, S5, R4, and R5 apply only to traditional pivot levels and
+	are only calculated if the 'PivotCalcType' input is set to 2; therefore,
+	we need to ensure they are not zero (i.e., they have been calculated)
+	before we plot them
+	}
+	if ShowR5 = 1 and R5 <> 0 then 
+		Plot1( R5, !( R5_KEY ), PlotColorDict[R5_KEY] astype int );
+	if ShowR4 = 1 and R4 <> 0 then 
+		Plot2( R4, !( R4_KEY ), PlotColorDict[R4_KEY] astype int );
+	if ShowR3 = 1 then 
+		Plot3( R3, !( R3_KEY ), PlotColorDict[R3_KEY] astype int );
+	if ShowR2 = 1 then 
+		Plot4( R2, !( R2_KEY ), PlotColorDict[R2_KEY] astype int );
+	if ShowR1 = 1 then 
+		Plot5( R1, !( R1_KEY ), PlotColorDict[R1_KEY] astype int );
+	if ShowPP = 1 and PivotCalcType <> 3 then { don't show PP for camarilla pivots }
+		Plot6( PP, !( PP_KEY ), PlotColorDict[PP_KEY] astype int );
+	if ShowS1 = 1 then 
+		Plot7( S1, !( S1_KEY ), PlotColorDict[S1_KEY] astype int );
+	if ShowS2 = 1 then 
+		Plot8( S2, !( S2_KEY ), PlotColorDict[S2_KEY] astype int );
+	if ShowS3 = 1 then 
+		Plot9( S3, !( S3_KEY ), PlotColorDict[S3_KEY] astype int );
+	if ShowS4 = 1 and S4 <> 0 then 
+		Plot10( S4, !( S4_KEY ), PlotColorDict[S4_KEY] astype int );
+	if ShowS5 = 1 and S5 <> 0 then 
+		Plot11( S5, !( S5_KEY ), PlotColorDict[S5_KEY] astype int );
+end;
+
+method void PlotOutputsTomInRS()
+begin
+	{
+	plot the pivots if they have been calculated (i.e., PP <> 0); if not, 
+	we will just exit
+	}
+	if PPTom = 0 then
+		return;
+	
+	{
+	Levels S4, S5, R4, and R5 apply only to traditional pivot levels and
+	are only calculated if the 'PivotCalcType' input is set to 2; therefore,
+	we need to ensure they are not zero (i.e., they have been calculated)
+	before we plot them
+	}
+	if ShowR5 = 1 and R5 <> 0 then 
+		Plot1( R5Tom, !( R5_KEY ), PlotColorDict[R5_KEY] astype int );
+	if ShowR4 = 1 and R4 <> 0 then 
+		Plot2( R4Tom, !( R4_KEY ), PlotColorDict[R4_KEY] astype int );
+	if ShowR3 = 1 then 
+		Plot3( R3Tom, !( R3_KEY ), PlotColorDict[R3_KEY] astype int );
+	if ShowR2 = 1 then 
+		Plot4( R2Tom, !( R2_KEY ), PlotColorDict[R2_KEY] astype int );
+	if ShowR1 = 1 then 
+		Plot5( R1Tom, !( R1_KEY ), PlotColorDict[R1_KEY] astype int );
+	if ShowPP = 1 and PivotCalcType <> 3 then { don't show PP for camarilla pivots }
+		Plot6( PPTom, !( PP_KEY ), PlotColorDict[PP_KEY] astype int );
+	if ShowS1 = 1 then 
+		Plot7( S1Tom, !( S1_KEY ), PlotColorDict[S1_KEY] astype int );
+	if ShowS2 = 1 then 
+		Plot8( S2Tom, !( S2_KEY ), PlotColorDict[S2_KEY] astype int );
+	if ShowS3 = 1 then 
+		Plot9( S3Tom, !( S3_KEY ), PlotColorDict[S3_KEY] astype int );
+	if ShowS4 = 1 and S4 <> 0 then 
+		Plot10( S4Tom, !( S4_KEY ), PlotColorDict[S4_KEY] astype int );
+	if ShowS5 = 1 and S5 <> 0 then 
+		Plot11( S5Tom, !( S5_KEY ), PlotColorDict[S5_KEY] astype int );
+end;
+
+method void SetPSPOffsetIndex()
+begin
+	{
+	this block of code is needed to ensure we access the proper PSP bar; in history,
+	the zero index of a PSP returns the data for the last 'closed' PSP bar; in real
+	time, the zero index returns the data for the currently forming (real time) bar
+	
+	since the pivots are to be calculated based on the last closed bar, we need to
+	access the last closed PSP bar; if the BarDateTime of the bar the code is 
+	running on is greater than the closing time of the PSP bar (in history), we set 
+	the index to 0 since the zero index is the last closed bar; if the BarDateTime 
+	is <= the closing time of the PSP bar, we set the index to 1 since this 
+	situation will be present when 1) we are in real time or 2) the time of the 
+	chart bar is the same as the closing time of the PSP bar; for situation 2, we
+	don't want to calculate new pivots until the new bar starts, so we will offset
+	by 1 since the 0 index bar is the pivot	bar that just closed and we want the 
+	pivots to be based on the prior PSP bar
+	}
+	if BarDateTime > PivotsPSP.Time[0] then
+		PSPIndexOffset = 0
+	else
+		PSPIndexOffset = 1;
+end;
+
+method void CheckForEnoughPSPBars()
+begin
+	{
+	before pivots are calculated, we need to ensure we have enough bars in the PSP to
+	calculate, at which point, we set 'OkToCalc' variable to true
+	}
+	if OkToCalc = false then
+	begin
+		switch ( PivotInterval )
+		begin
+			case QUARTERLY_PIVOTS:
+				OkToCalc = PivotsPSP.Count > 3;
+			case YEARLY_PIVOTS:
+				OkToCalc = PivotsPSP.Count > 12;
+			default:
+				OkToCalc = PivotsPSP.Count > 1;
+		end;	
+	end;
+end;
+
+method void CalcLevels()
+begin
+	{ we will calculate pivots if we have enough PSP bars (OKToCalc is true) }
+	if OKToCalc then
+		CalculateLevels();
+end;
+
+method void CheckForNewPivotLevels()
+begin
+	{
+	when new pivot levels are calculated, we need to create text labels for the new
+	pivot levels and set plot colors to transparent to eliminate connector lines 
+	from the prior pivot levels to the new pivot levels
+	}
+	if PP <> 0
+		and ( PP <> PP[1] or R1 <> R1[1] or S1 <> S1[1] ) then
+	begin
+		SetupNewTextLabels();
+		SetPlotsToTransparent();
+	end;
+end;
+
+method void ProcessTomorrowsPivots()
+begin
+	{
+	we will calculate pivots each time the main line code runs, so the plots will
+	display the current pivot values; therefore, we need to remove the trendlines
+	used to show what the new pivots will be
+	}
+	if TomorrowsPivotsShowing and RealTime then
+	begin
+		RemoveTomorrowsPivots();
+		ShowTodaysLabels();
+	end;
+
+	{
+	this code is used to show tomorrow's pivots in the case where this indicator is
+	inserted after market hours at the end of the PSP's session; in real time, we 
+	will show tomorrow's pivots using the PSP updated event
+	}
+	if PivotsPSP.LastBarIsSessionClosed 
+		and LastBarOnChartEx
+		and BarDateTime <= PivotsPSP.Time[0] then
+	begin
+		ShowTomorrowsPivots();
+		HideTodaysLabels();
+		
+		{ plot tomorrow's pivots in RadarScreen }
+		if InAChart = false then
+			PlotOutputsTomInRS();
+	end;	
+end;
+
+method void MainCode()
+begin
+	SetPSPOffsetIndex();
+	CheckForEnoughPSPBars();
+	CalcLevels();
+	CheckForNewPivotLevels();
+	PlotOutputs();
+	ProcessTomorrowsPivots();
+	//增加报警代码，如果碰触到轴心点，则报警。
+	If H=C and C=R4 then begin
+		Alert( !( "R4" ) );
+	end;
+	//下跌
+	If L=C and C=S4  then begin
+		Alert( !( "S4" ) );
+	end;
+	//
+	If H=C and C=R2 then begin
+		Alert( !( "R2" ) );
+	end;
+	//下跌
+	If L=C and C=S2  then begin
+		Alert( !( "S2" ) );
+	end;
+	//
+	If H=C and C=R3 then begin
+		Alert( !( "R3" ) );
+	end;
+	//下跌
+	If L=C and C=S3  then begin
+		Alert( !( "S3" ) );
+	end;
+end;
+
+{ Main Code region }
+#endregion
+
+once
+begin
+	Init();
+end;
+
+once( GetAppInfo( aiRealtimeCalc ) = 1 )
+begin
+	RealTime = true;
+end;
+
+{ we will only calculate and plot if the input values are okay, inputs are 
+  checked in the "ErrorCheckInputValues" method }
+if InputsAreOkay then	
+	MainCode();
+
+
