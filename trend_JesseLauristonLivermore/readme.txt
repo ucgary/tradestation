@@ -1,0 +1,1 @@
+trend indicator of JesseLauristonLivermore
