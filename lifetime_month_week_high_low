@@ -1,0 +1,50 @@
+Input: double warn_limit(0.0005),MovAvgLen1(4),MovAvgLen2(100),MovAvgLen3(200);
+
+var:
+double price_ma1(0), double price_ma2(0),double price_ma3(0),
+double lifetime_high(0),double lifetime_low(0),
+double previous_month_high(0),double previous_month_low(0),previous_week_high(0),double previous_week_low(0);
+
+If PSP1.Count > MovAvgLen1 then begin
+	price_ma1 = Average(PSP1.Close,MovAvgLen1);
+	Plot1( price_ma1, "price_ma1" ) ;
+end;
+
+If PSP1.Count > MovAvgLen2 then begin
+	price_ma2 = Average(PSP1.Close,MovAvgLen2);
+	Plot2( price_ma2, "price_ma2" ) ;
+end;
+
+If PSP1.Count > MovAvgLen3 then begin
+	price_ma3 = Average(PSP1.Close,MovAvgLen3);
+	Plot3( price_ma3, "price_ma3" ) ;
+end;
+
+lifetime_high = highest(PSP1.Close,250);
+lifetime_low = lowest(PSP1.Close,250);
+
+previous_month_high = HighM(1) ;
+previous_month_low = LowM(1);
+
+previous_week_high = HighW(1) ;
+previous_week_low = LowW(1);
+
+plot4(lifetime_high,"lifetime_high");
+plot5(lifetime_low,"lifetime_low");
+plot6(previous_month_high,"previous_month_high");
+plot7(previous_month_low,"previous_month_low");
+plot8(previous_week_high,"previous_week_high");
+plot9(previous_week_low,"previous_week_low");
+
+//Condition1 = FALSE ;
+If H=C and ((C<price_ma1 and C+C*warn_limit>price_ma1) or (C<price_ma2 and C+C*warn_limit>price_ma2) or (C<price_ma3 and C+C*warn_limit>price_ma3) or (C<lifetime_high and C+C*warn_limit>lifetime_high) or (C<lifetime_low and C+C*warn_limit>lifetime_low) or (C<previous_month_high and C+C*warn_limit>previous_month_high) or (C<previous_month_low and C+C*warn_limit>previous_month_low)) then begin
+		Alert( !( "Goes up, reaching to daily point" ) );
+	end;
+	//下跌，靠近前高
+If L=C and ((C>price_ma1 and C-C*warn_limit<price_ma1) or (C>price_ma2 and C-C*warn_limit<price_ma2) or (C>price_ma3 and C-C*warn_limit<price_ma3) or (C>lifetime_high and C-C*warn_limit<lifetime_high) or (C>lifetime_low and C-C*warn_limit<lifetime_low) or (C>previous_month_high and C-C*warn_limit<previous_month_high) or (C>previous_month_low and C-C*warn_limit<previous_month_low)) then begin
+		Alert( !( "Goes down, reaching to daily point" ) );
+	end;
+
+
+//if Condition1 then
+	//Alert( "" ) ;
