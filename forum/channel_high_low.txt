@@ -1,0 +1,57 @@
+Inputs: Price(Close),mystarttime(0929),myendtime(1615),X(0),Y(3);
+
+vars: startTime(0), endTime(0), startTimeStamp(0), FirstBarOpen(0), FirstBarSet(false),HH(0),LL(0),Midline(0);
+
+Begin 
+once begin 
+   startTime = mystarttime;
+   startTimeStamp = calcTime(startTime, barInterval); 
+   endTime = myendtime;
+end; 
+
+//从开盘的时候跟踪最高价和最低价，画出通道，适用于开盘价系统。如果盘外时间，以盘外的第一根K线开始跟踪最高价和最低价。
+
+if FirstBarSet and time >= startTimeStamp then begin  
+   	HH = high;
+   	LL = low;
+	FirstBarOpen = open; 
+   	FirstBarSet = false;
+end
+else if time >= endTime or date <> date[1] then begin
+   	HH = high;
+   	LL = low;
+  FirstBarSet = true; 
+end; 
+
+   if time >= StartTimeStamp and FirstBarSet = true then begin   
+      HH = high;
+      LL = low;
+   end;   
+ 
+   if high >= HH then begin 
+      HH = high; 
+   end; 
+   if low <= LL then begin 
+      LL = low; 
+   end;
+    
+end;
+
+Condition0 = Time > mystarttime And Time < myendtime;
+
+Midline = (HH+LL)/2;
+
+
+
+if Condition0 then Begin
+plot1(HH,"HH",cyan,Default,0);
+plot3(Midline,"Midline",green,Default,0);
+plot5(LL,"LL",magenta,Default,0); 
+end;
+
+If Condition0 And HH-Midline >= Y then
+plot2(HH-Y,"HH2",cyan,Default,0);
+
+If Condition0 And Midline-LL >= Y then
+plot4(LL+Y,"LL2",magenta,Default,0);
+
