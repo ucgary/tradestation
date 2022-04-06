@@ -1,0 +1,28 @@
+inputs:	Price(Close),Length1(55),Length2(75);
+
+variables: Avg1(0),Avg2(0),Avg3(0),Diff(0),Zeroline(0);
+
+Avg1 = WAverage(Price,Length1);
+Avg2 = XAverage(Price,Length2);
+Diff = Avg1 - Avg2;
+
+Condition1 = Diff > Diff[1] And Diff > Zeroline;
+Condition2 = Diff < Diff[1] And Diff > Zeroline;
+
+Condition3 = Diff < Diff[1] And Diff < Zeroline;
+Condition4 = Diff > Diff[1] And Diff < Zeroline;
+
+If Condition1 then
+Plot3(Diff*1000,"Diff",cyan);
+
+If Condition2 then
+Plot3(Diff*1000,"Diff",darkcyan);
+
+If Condition3 then
+Plot3(Diff*1000,"Diff",magenta);
+
+If Condition4 then
+Plot3(Diff*1000,"Diff",darkmagenta);
+
+//Plot2(Avg3*1000,"Avg3",white,Default,2);
+
